@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.views">
+   </extension>
+
+	<extension point="org.eclipse.graphiti.ui.diagramTypes">
+		<diagramType
+			id="de.fhg.iwu.komma.graphiti.test.TestDiagramType"
+			type="graphitiTest"
+			name="KOMMA Graphiti Test Diagram"
+			description="This is a diagram type to evaluate and test Graphiti features for use in the KOMMA framework">
+		</diagramType>
+	</extension>
+	
+	<extension point="org.eclipse.graphiti.ui.diagramTypeProviders">
+		<diagramTypeProvider
+			id="de.fhg.iwu.komma.graphiti.test.TestDiagramTypeProvider"
+			name="KOMMA Test Editor"
+			class="de.fhg.iwu.komma.graphiti.SystemDiagramTypeProvider"
+			description="This is a test Graphiti editor for use in the KOMMA framework">
+			<diagramType
+				id="de.fhg.iwu.komma.graphiti.test.TestDiagramType">
+			</diagramType>
+		</diagramTypeProvider>
+	</extension>
+	
+	   <extension
+         point="org.eclipse.ui.editors">
+ 	  <editor
+          class="de.fhg.iwu.komma.graphiti.SystemDiagramEditor"
+          contributorClass="org.eclipse.graphiti.ui.editor.DiagramEditorActionBarContributor"
+          default="true"
+          extensions="diagram"
+          icon="icons/diagram.gif"
+          id="de.fhg.iwu.komma.graphiti.test.SystemDiagramEditor"
+          matchingStrategy="org.eclipse.graphiti.ui.editor.DiagramEditorFactory$DiagramEditorMatchingStrategy"
+          name="%_diagram_editor_name">
+       <contentTypeBinding
+             contentTypeId="org.eclipse.graphiti.content.diagram">
+       </contentTypeBinding>
+      </editor>
+   </extension>
+</plugin>
