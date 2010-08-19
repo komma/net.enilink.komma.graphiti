@@ -18,7 +18,7 @@
 		<diagramTypeProvider
 			id="de.fhg.iwu.komma.graphiti.test.TestDiagramTypeProvider"
 			name="KOMMA Test Editor"
-			class="de.fhg.iwu.komma.graphiti.SystemDiagramTypeProvider"
+			class="net.enilink.komma.graphiti.SystemDiagramTypeProvider"
 			description="This is a test Graphiti editor for use in the KOMMA framework">
 			<diagramType
 				id="de.fhg.iwu.komma.graphiti.test.TestDiagramType">
@@ -29,7 +29,7 @@
 	   <extension
          point="org.eclipse.ui.editors">
  	  <editor
-          class="de.fhg.iwu.komma.graphiti.SystemDiagramEditor"
+          class="net.enilink.komma.graphiti.SystemDiagramEditor"
           contributorClass="org.eclipse.graphiti.ui.editor.DiagramEditorActionBarContributor"
           default="true"
           extensions="diagram"
