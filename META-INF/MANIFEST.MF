@@ -11,7 +11,10 @@ Require-Bundle: org.eclipse.gef,
  net.enilink.vocab.systems,
  org.eclipse.emf.transaction,
  org.eclipse.ui.views.properties.tabbed,
- net.enilink.komma.edit.ui
+ net.enilink.komma.edit.ui,
+ net.enilink.komma.workbench,
+ org.eclipse.gmf.runtime.draw2d.ui.render,
+ org.eclipse.gmf.runtime.draw2d.ui
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: com.google.inject;version="2.0.0",

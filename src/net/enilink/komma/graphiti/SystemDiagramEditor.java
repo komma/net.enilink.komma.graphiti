@@ -17,7 +17,7 @@ import net.enilink.komma.graphiti.dnd.SystemDiagramDropTargetListener;
 import net.enilink.komma.model.IModel;
 
 public class SystemDiagramEditor extends DiagramEditor implements
-		ISupportedEditor {
+		ISupportedEditor, IDiagramEditorExt {
 
 	@Override
 	public void doSave(IProgressMonitor monitor) {

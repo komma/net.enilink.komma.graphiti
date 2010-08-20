@@ -5,9 +5,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.graphiti.dt.IDiagramTypeProvider;
 import org.eclipse.graphiti.features.ConfigurableFeatureProviderWrapper;
 import org.eclipse.graphiti.features.IFeatureProvider;
+import org.eclipse.graphiti.platform.IDiagramEditor;
 import org.eclipse.graphiti.platform.ga.IGraphicsAlgorithmRendererFactory;
 import org.eclipse.graphiti.tb.IToolBehaviorProvider;
 
@@ -20,7 +24,9 @@ import com.google.inject.assistedinject.FactoryProvider;
 import com.google.inject.multibindings.Multibinder;
 
 import net.enilink.vocab.systems.SYSTEMS;
+import net.enilink.komma.common.adapter.IAdapterFactory;
 import net.enilink.komma.common.util.IResourceLocator;
+import net.enilink.komma.edit.domain.AdapterFactoryEditingDomain;
 import net.enilink.komma.edit.domain.IEditingDomainProvider;
 import net.enilink.komma.edit.ui.editor.KommaEditorSupport;
 import net.enilink.komma.edit.ui.views.IViewerMenuSupport;
@@ -108,12 +114,29 @@ public class SystemDiagramModule extends AbstractModule {
 
 	@Provides
 	@Singleton
-	protected IModelSet provideModelSet() {
-		return modelSetManager.getModelSet();
+	protected IModelSet provideModelSet(IDiagramTypeProvider diagramTypeProvider) {
+		org.eclipse.emf.common.util.URI uri = diagramTypeProvider.getDiagram()
+				.eResource().getURI();
+		IProject project = null;
+		if (uri.isPlatform()) {
+			IResource resource = ResourcesPlugin.getWorkspace().getRoot()
+					.findMember(uri.toPlatformString(true));
+			if (resource != null) {
+				project = resource.getProject();
+			}
+		}
+
+		return modelSetManager.createModelSet(project);
 	}
 
 	@Provides
-	protected SystemDiagramEditor provideEditor(
+	protected IDiagramEditorExt provideDiagramEditor(
+			IDiagramTypeProvider diagramTypeProvider) {
+		return (IDiagramEditorExt) diagramTypeProvider.getDiagramEditor();
+	}
+
+	@Provides
+	protected SystemDiagramEditor provideSystemDiagramEditor(
 			IDiagramTypeProvider diagramTypeProvider) {
 		return (SystemDiagramEditor) diagramTypeProvider.getDiagramEditor();
 	}
@@ -152,5 +175,12 @@ public class SystemDiagramModule extends AbstractModule {
 	protected IFeatureProvider provideFeatureProvider(
 			SystemDiagramFeatureProvider systemFeatureProvider) {
 		return new ConfigurableFeatureProviderWrapper(systemFeatureProvider);
+	}
+
+	@Provides
+	protected IAdapterFactory provideAdapterFactory(
+			IEditingDomainProvider editingDomainProvider) {
+		return ((AdapterFactoryEditingDomain) editingDomainProvider
+				.getEditingDomain()).getAdapterFactory();
 	}
 };

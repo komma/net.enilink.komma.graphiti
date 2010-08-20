@@ -28,7 +28,7 @@ import com.google.inject.Injector;
 
 import net.enilink.vocab.systems.SYSTEMS;
 import net.enilink.vocab.systems.System;
-import net.enilink.komma.concepts.IClass;
+import net.enilink.komma.concepts.IProperty;
 import net.enilink.komma.graphiti.features.DeleteFeature;
 import net.enilink.komma.graphiti.features.DirectEditingFeature;
 import net.enilink.komma.graphiti.features.TestGreatFeature;
@@ -138,10 +138,7 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 	@Override
 	public IAddFeature getAddFeature(IAddContext context) {
 		Object newObject = context.getNewObject();
-		if (newObject instanceof System
-				|| newObject instanceof IClass
-				&& ((IClass) context.getNewObject()).getRdfsSubClassOf()
-						.contains(SYSTEMS.TYPE_SYSTEM)) {
+		if (newObject instanceof IEntity && !(newObject instanceof IProperty)) {
 			return injector.getInstance(AddNodeFeature.class);
 		}
 		if (newObject instanceof IStatement) {

@@ -12,7 +12,7 @@ import com.google.inject.Inject;
 import net.enilink.vocab.systems.System;
 import net.enilink.komma.graphiti.graphical.GenericEllipseFigure;
 import net.enilink.komma.graphiti.graphical.GenericRectangleFigure;
-import net.enilink.komma.graphiti.graphical.StationFigure;
+import net.enilink.komma.graphiti.graphical.NodeFigure;
 import net.enilink.komma.graphiti.graphical.TransportFigure;
 
 public class SystemGraphicsAlgorithmRendererFactory implements
@@ -40,7 +40,7 @@ public class SystemGraphicsAlgorithmRendererFactory implements
 		IGraphicsAlgorithmRenderer renderer = null;
 		if (STATIONFIGURE.equals(rendererContext.getPlatformGraphicsAlgorithm()
 				.getId())) {
-			renderer = createStationFigure(pe);
+			renderer = createNodeFigure(pe);
 		} else if (TRANSPORTFIGURE.equals(rendererContext
 				.getPlatformGraphicsAlgorithm().getId())) {
 			renderer = createTransportFigure(pe);
@@ -61,16 +61,18 @@ public class SystemGraphicsAlgorithmRendererFactory implements
 		return renderer;
 	}
 
-	private StationFigure createStationFigure(PictogramElement pe) {
-		StationFigure figure = new StationFigure();
+	private NodeFigure createNodeFigure(PictogramElement pe) {
+		// StationFigure figure = new StationFigure();
+		//
+		// if (pe != null) {
+		// Object bo = fp.getBusinessObjectForPictogramElement(pe);
+		//
+		// if (bo instanceof System) {
+		// figure.setLabel(((System) bo).getSystemsName());
+		// }
+		// }
 
-		if (pe != null) {
-			Object bo = fp.getBusinessObjectForPictogramElement(pe);
-
-			if (bo instanceof System) {
-				figure.setLabel(((System) bo).getSystemsName());
-			}
-		}
+		NodeFigure figure = new NodeFigure("/figures/node.svg");
 
 		return figure;
 	}

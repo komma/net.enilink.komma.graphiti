@@ -1,11 +1,16 @@
 package net.enilink.komma.graphiti.graphical;
 
+import org.eclipse.core.runtime.FileLocator;
+import org.eclipse.core.runtime.Path;
+import org.eclipse.draw2d.BorderLayout;
 import org.eclipse.draw2d.ColorConstants;
-import org.eclipse.draw2d.Graphics;
 import org.eclipse.draw2d.RoundedRectangle;
 import org.eclipse.draw2d.geometry.Dimension;
-import org.eclipse.draw2d.geometry.PointList;
 import org.eclipse.draw2d.geometry.Rectangle;
+import org.eclipse.draw2d.geometry.Translatable;
+import org.eclipse.gmf.runtime.draw2d.ui.mapmode.IMapMode;
+import org.eclipse.gmf.runtime.draw2d.ui.render.factory.RenderedImageFactory;
+import org.eclipse.gmf.runtime.draw2d.ui.render.figures.ScalableImageFigure;
 import org.eclipse.graphiti.platform.ga.IGraphicsAlgorithmRenderer;
 import org.eclipse.graphiti.platform.ga.IVisualState;
 import org.eclipse.graphiti.platform.ga.IVisualStateChangeListener;
@@ -14,10 +19,11 @@ import org.eclipse.graphiti.platform.ga.VisualState;
 import org.eclipse.graphiti.platform.ga.VisualStateChangedEvent;
 import org.eclipse.swt.graphics.Color;
 
-// obviously, this is the way to go for complex layouts
-public class StationFigure extends RoundedRectangle implements
+import net.enilink.komma.graphiti.KommaGraphitiPlugin;
+
+public class NodeFigure extends RoundedRectangle implements
 		IGraphicsAlgorithmRenderer, IVisualStateChangeListener,
-		IVisualStateHolder {
+		IVisualStateHolder, IMapMode {
 
 	// org.eclipse.swt.graphics.Color is used here, not the color from Graphiti
 	// for some reason
@@ -33,17 +39,28 @@ public class StationFigure extends RoundedRectangle implements
 	// this holds the visual state of the object
 	private VisualState visualState;
 
-	private String label = "new station";
-
 	Color selectedElemColor, selectedTextColor;
 
-	public StationFigure() {
+	ScalableImageFigure imageFigure;
+
+	public NodeFigure(String path) {
 		// set standard values
-		setCornerDimensions(new Dimension(4, 4));
 		setBackgroundColor(NORMAL_BG_COLOR);
 		setLineWidth(NORMAL_LINE_WIDTH);
 		selectedElemColor = NORMAL_ELEM_COLOR;
 		selectedTextColor = NORMAL_TEXT_COLOR;
+
+		imageFigure = new ScalableImageFigure(
+				RenderedImageFactory.getInstance(FileLocator.find(
+						KommaGraphitiPlugin.getPlugin().getBundle(), new Path(
+								path), null)), true, true, true);
+		add(imageFigure);
+	}
+
+	@Override
+	public void setBounds(Rectangle rect) {
+		imageFigure.setBounds(rect);
+		super.setBounds(rect);
 	}
 
 	// returns the object's visual state variable
@@ -69,9 +86,9 @@ public class StationFigure extends RoundedRectangle implements
 			// this marks the object as being selected by the user
 			// we set some variables to visualize the selected state
 			setBackgroundColor(SELECTED_BG_COLOR);// deriving the object from a
-													// draw2D object provided us
-													// with this fine
-													// possibility
+			// draw2D object provided us
+			// with this fine
+			// possibility
 			setLineWidth(SELECTED_LINE_WIDTH);
 			selectedElemColor = SELECTED_ELEM_COLOR;
 			selectedTextColor = SELECTED_TEXT_COLOR;
@@ -94,88 +111,24 @@ public class StationFigure extends RoundedRectangle implements
 	}
 
 	@Override
-	protected void fillShape(Graphics g) {
-		// could be used to use anti aliasing
-		// if(ADVANCED_GRAPHICS)
-		// g.setAntialias(SWT.ON);
-		Rectangle bounds = getInnerBounds(), block;
-		PointList arrow = new PointList();
-
-		g.setBackgroundColor(getBackgroundColor());
-
-		g.fillRoundRectangle(bounds, corner.width, corner.height);// ?
-
-		block = new Rectangle(bounds.width / 8 + bounds.x, 3 * bounds.height
-				/ 5 + bounds.y, 3 * bounds.width / 4, bounds.height / 5);
-		g.setBackgroundColor(selectedElemColor);
-		g.fillRectangle(block);
-
-		arrow.addPoint(bounds.width / 2 + bounds.x - bounds.width / 8, bounds.y
-				+ bounds.height / 10);
-		arrow.addPoint(bounds.width / 2 + bounds.x, 5 * bounds.height / 10
-				+ bounds.y);
-		arrow.addPoint(bounds.width / 2 + bounds.x + bounds.width / 8, bounds.y
-				+ bounds.height / 10);
-		g.fillPolygon(arrow);
+	public int LPtoDP(int logicalUnit) {
+		return logicalUnit;
 	}
 
 	@Override
-	protected void outlineShape(Graphics g) {
-		Rectangle innerBounds = getInnerBounds();
-
-		super.outlineShape(g);
-
-		if (label != null) {
-			// draw the name of the station
-			// FontData[] allFonts = g.getFont().getFontData(), oldFont;
-			// Device fontDevice = g.getFont().getDevice();
-
-			// oldFont = allFonts.clone();
-			// int neededWidth = label.length()
-			// * g.getFontMetrics().getAverageCharWidth();
-			// float factor = ((float) innerBounds.width) / ((float)
-			// neededWidth);
-			// int newCharHeight = Math.min(
-			// (int) Math.floor(((float) g.getFontMetrics().getHeight())
-			// * factor), innerBounds.height / 4);
-
-			// for(FontData current: allFonts){
-			// current.setHeight(newCharHeight);
-			// }
-			// // change font
-			// g.setFont(new Font(fontDevice,allFonts));
-
-			Color oldFGColor = getForegroundColor();
-
-			setForegroundColor(selectedTextColor);
-			int textWidth = label.length()
-					* g.getFontMetrics().getAverageCharWidth();
-
-			g.drawText(label, innerBounds.x + innerBounds.width / 2 - textWidth
-					/ 2, innerBounds.y + 3 * innerBounds.height / 4 - 6);
-
-			// undo changes we applied to the font
-			// g.setFont(new Font(fontDevice,oldFont));
-
-			setForegroundColor(oldFGColor);
-		}
+	public int DPtoLP(int deviceUnit) {
+		return deviceUnit;
 	}
 
-	private Rectangle getInnerBounds() {
-		Rectangle r = getBounds().getCopy();
-		float lineInset = Math.max(1.0f, getLineWidthFloat()) / 2.0f;
-		int leftInset = (int) Math.floor(lineInset);
-		int rightInset = (int) Math.ceil(lineInset);
-
-		r.x += leftInset;
-		r.y += leftInset;
-		r.height -= (leftInset + rightInset);
-		r.width -= (leftInset + rightInset);
-
-		return r;
+	@Override
+	public Translatable DPtoLP(Translatable t) {
+		t.performScale(1.0);
+		return t;
 	}
 
-	public void setLabel(String label) {
-		this.label = label;
+	@Override
+	public Translatable LPtoDP(Translatable t) {
+		t.performScale(1.0);
+		return t;
 	}
 }
