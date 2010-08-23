@@ -12,26 +12,36 @@ import org.eclipse.graphiti.features.ICreateFeature;
 import org.eclipse.graphiti.features.IDeleteFeature;
 import org.eclipse.graphiti.features.IDirectEditingFeature;
 import org.eclipse.graphiti.features.IFeature;
+import org.eclipse.graphiti.features.ILayoutFeature;
 import org.eclipse.graphiti.features.IMoveShapeFeature;
+import org.eclipse.graphiti.features.IUpdateFeature;
 import org.eclipse.graphiti.features.context.IAddContext;
 import org.eclipse.graphiti.features.context.ICustomContext;
 import org.eclipse.graphiti.features.context.IDeleteContext;
 import org.eclipse.graphiti.features.context.IDirectEditingContext;
+import org.eclipse.graphiti.features.context.ILayoutContext;
 import org.eclipse.graphiti.features.context.IMoveShapeContext;
 import org.eclipse.graphiti.features.context.IPictogramElementContext;
+import org.eclipse.graphiti.features.context.IUpdateContext;
 import org.eclipse.graphiti.features.custom.ICustomFeature;
 import org.eclipse.graphiti.features.impl.IIndependenceSolver;
+import org.eclipse.graphiti.mm.algorithms.Text;
+import org.eclipse.graphiti.mm.pictograms.ContainerShape;
+import org.eclipse.graphiti.mm.pictograms.Diagram;
+import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.graphiti.ui.features.DefaultFeatureProvider;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 
 import net.enilink.vocab.systems.SYSTEMS;
-import net.enilink.vocab.systems.System;
 import net.enilink.komma.concepts.IProperty;
+import net.enilink.komma.concepts.IResource;
 import net.enilink.komma.graphiti.features.DeleteFeature;
 import net.enilink.komma.graphiti.features.DirectEditingFeature;
+import net.enilink.komma.graphiti.features.LayoutNodeFeature;
 import net.enilink.komma.graphiti.features.TestGreatFeature;
+import net.enilink.komma.graphiti.features.UpdateNodeFeature;
 import net.enilink.komma.graphiti.features.add.AddConnectionFeature;
 import net.enilink.komma.graphiti.features.add.AddNodeFeature;
 import net.enilink.komma.graphiti.features.create.CreateConnectionFeature;
@@ -148,6 +158,16 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 	}
 
 	@Override
+	public ILayoutFeature getLayoutFeature(ILayoutContext context) {
+		PictogramElement pe = context.getPictogramElement();
+		if (pe instanceof ContainerShape
+				&& (getBusinessObjectForPictogramElement(pe) instanceof IResource)) {
+			return injector.getInstance(LayoutNodeFeature.class);
+		}
+		return super.getLayoutFeature(context);
+	}
+
+	@Override
 	public IMoveShapeFeature getMoveShapeFeature(IMoveShapeContext context) {
 		Object bo = getBusinessObjectForPictogramElement(context.getShape());
 
@@ -163,6 +183,16 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 	}
 
 	@Override
+	public IUpdateFeature getUpdateFeature(IUpdateContext context) {
+		Object bo = getBusinessObjectForPictogramElement(context
+				.getPictogramElement());
+		if (bo instanceof IResource) {
+			return injector.getInstance(UpdateNodeFeature.class);
+		}
+		return super.getUpdateFeature(context);
+	}
+
+	@Override
 	public IFeature[] getDragAndDropFeatures(IPictogramElementContext context) {
 		// simply return all create connection features
 		return getCreateConnectionFeatures();
@@ -171,12 +201,18 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 	@Override
 	public IDirectEditingFeature getDirectEditingFeature(
 			IDirectEditingContext context) {
-		Object bo = getBusinessObjectForPictogramElement(context
-				.getPictogramElement());
+		PictogramElement pe = context.getPictogramElement();
+		if (pe.getGraphicsAlgorithm() instanceof Text) {
+			while (!(pe instanceof ContainerShape || pe.eContainer() instanceof Diagram)) {
+				pe = (PictogramElement) pe.eContainer();
+			}
 
-		// for directed flow objects, we want the direct editing feature
-		if (bo instanceof System) {
-			return injector.getInstance(DirectEditingFeature.class);
+			final Object bo = getBusinessObjectForPictogramElement(pe);
+
+			// for directed flow objects, we want the direct editing feature
+			if (bo instanceof IResource) {
+				return injector.getInstance(DirectEditingFeature.class);
+			}
 		}
 
 		return super.getDirectEditingFeature(context);

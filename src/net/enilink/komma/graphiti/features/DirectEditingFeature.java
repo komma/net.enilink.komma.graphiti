@@ -4,14 +4,18 @@ import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.context.IContext;
 import org.eclipse.graphiti.features.context.IDirectEditingContext;
 import org.eclipse.graphiti.features.impl.AbstractDirectEditingFeature;
+import org.eclipse.graphiti.mm.algorithms.Text;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
-import org.eclipse.graphiti.mm.pictograms.Shape;
 
 import com.google.inject.Inject;
 
-import net.enilink.vocab.systems.System;
+import net.enilink.komma.concepts.IResource;
+import net.enilink.komma.graphiti.service.IDiagramService;
 
 public class DirectEditingFeature extends AbstractDirectEditingFeature {
+	@Inject
+	IDiagramService diagramService;
+
 	@Inject
 	public DirectEditingFeature(IFeatureProvider fp) {
 		super(fp);
@@ -24,11 +28,13 @@ public class DirectEditingFeature extends AbstractDirectEditingFeature {
 
 	@Override
 	public String getInitialValue(IDirectEditingContext context) {
-		Object bo = getBusinessObjectForPictogramElement(context
-				.getPictogramElement());
+		IResource resource = getResource(context.getPictogramElement());
 
-		if (bo instanceof System) {
-			return ((System) bo).getSystemsName();
+		if (resource != null) {
+			String label = resource.getRdfsLabel();
+			if (label != null) {
+				return label;
+			}
 		}
 
 		return "";
@@ -47,18 +53,11 @@ public class DirectEditingFeature extends AbstractDirectEditingFeature {
 	@Override
 	public void setValue(String value, IDirectEditingContext context) {
 		PictogramElement pe = context.getPictogramElement();
-		Object bo = getBusinessObjectForPictogramElement(pe);
 
-		if (bo instanceof System) {
-			// set the item's name to the new value
-			((System) bo).setSystemsName(value);
-			// an update will have to be done here, but I think the update
-			// feature will have to be implemented before this will affect
-			// anything
-			if (pe instanceof Shape) {
-				updatePictogramElement(((Shape) pe).getContainer());
-			}
-		}
+		// set the item's name to the new value
+		getResource(pe).setRdfsLabel(value);
+
+		updatePictogramElement(diagramService.getRootElement(pe));
 	}
 
 	/**
@@ -69,15 +68,21 @@ public class DirectEditingFeature extends AbstractDirectEditingFeature {
 	public boolean canExecute(IContext context) {
 		if (context instanceof IDirectEditingContext) {
 			IDirectEditingContext c = (IDirectEditingContext) context;
-			Object bo = getBusinessObjectForPictogramElement(c
-					.getPictogramElement());
-
-			if (bo instanceof System) {
-				return true;
-			}
+			PictogramElement pe = c.getPictogramElement();
+			return getResource(pe) != null;
 		}
 
 		return false;
 	}
 
+	IResource getResource(PictogramElement pe) {
+		if (pe.getGraphicsAlgorithm() instanceof Text) {
+			final Object bo = diagramService.getRootBusinessObject(pe);
+
+			if (bo instanceof IResource) {
+				return (IResource) bo;
+			}
+		}
+		return null;
+	}
 }

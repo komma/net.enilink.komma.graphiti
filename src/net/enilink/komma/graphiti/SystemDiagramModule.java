@@ -5,15 +5,18 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.eclipse.core.net.proxy.IProxyService;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.graphiti.dt.IDiagramTypeProvider;
 import org.eclipse.graphiti.features.ConfigurableFeatureProviderWrapper;
 import org.eclipse.graphiti.features.IFeatureProvider;
-import org.eclipse.graphiti.platform.IDiagramEditor;
 import org.eclipse.graphiti.platform.ga.IGraphicsAlgorithmRendererFactory;
 import org.eclipse.graphiti.tb.IToolBehaviorProvider;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.ServiceReference;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -34,6 +37,8 @@ import net.enilink.komma.graphiti.features.create.CreateNodeFeature;
 import net.enilink.komma.graphiti.features.create.CreateNodeFeatureFactory;
 import net.enilink.komma.graphiti.features.create.IURIFactory;
 import net.enilink.komma.graphiti.model.ModelSetManager;
+import net.enilink.komma.graphiti.service.DiagramService;
+import net.enilink.komma.graphiti.service.IDiagramService;
 import net.enilink.komma.model.IModel;
 import net.enilink.komma.model.IModelSet;
 import net.enilink.komma.core.URI;
@@ -110,6 +115,19 @@ public class SystemDiagramModule extends AbstractModule {
 		bind(new TypeLiteral<KommaEditorSupport<SystemDiagramEditor>>() {
 		}).to(EditorSupport.class);
 		bind(IViewerMenuSupport.class).to(EditorSupport.class);
+		bind(IDiagramService.class).to(DiagramService.class);
+	}
+
+	@Provides
+	protected IProxyService provideProxyService() {
+		BundleContext bundleContext = FrameworkUtil.getBundle(this.getClass())
+				.getBundleContext();
+		ServiceReference serviceRef = bundleContext
+				.getServiceReference(IProxyService.class.getName());
+		if (serviceRef != null) {
+			return (IProxyService) bundleContext.getService(serviceRef);
+		}
+		return null;
 	}
 
 	@Provides

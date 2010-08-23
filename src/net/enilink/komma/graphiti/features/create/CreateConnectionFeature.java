@@ -16,6 +16,7 @@ import net.enilink.komma.common.adapter.IAdapterFactory;
 import net.enilink.komma.concepts.IProperty;
 import net.enilink.komma.edit.ui.provider.AdapterFactoryLabelProvider;
 import net.enilink.komma.graphiti.IDiagramEditorExt;
+import net.enilink.komma.graphiti.service.IDiagramService;
 import net.enilink.komma.model.IModel;
 import net.enilink.komma.core.IEntity;
 import net.enilink.komma.core.IReference;
@@ -68,6 +69,9 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature {
 
 	@Inject
 	IDiagramEditorExt editor;
+
+	@Inject
+	IDiagramService diagramService;
 
 	@Inject
 	public CreateConnectionFeature(IFeatureProvider fp) {
@@ -150,7 +154,7 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature {
 	 */
 	private IEntity getEntity(Anchor anchor) {
 		if (anchor != null) {
-			Object obj = getBusinessObjectForPictogramElement(anchor
+			Object obj = diagramService.getRootBusinessObject(anchor
 					.getParent());
 			if (obj instanceof IEntity) {
 				return (IEntity) obj;

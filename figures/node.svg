@@ -7,16 +7,31 @@
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="85.714287"
-   height="85.714287"
+   width="90"
+   height="90"
    id="svg2"
    version="1.1"
    inkscape:version="0.47pre3 "
-   sodipodi:docname="node.svg">
+   sodipodi:docname="node.svg"
+   inkscape:export-filename="D:\Projekte\komma_graphiti\net.enilink.komma.graphiti\figures\node.png"
+   inkscape:export-xdpi="74.621338"
+   inkscape:export-ydpi="74.621338">
   <defs
      id="defs4">
+    <linearGradient
+       id="linearGradient3602">
+      <stop
+         style="stop-color:#0089ff;stop-opacity:1;"
+         offset="0"
+         id="stop3604" />
+      <stop
+         style="stop-color:#00ffdd;stop-opacity:1;"
+         offset="1"
+         id="stop3606" />
+    </linearGradient>
     <inkscape:perspective
        sodipodi:type="inkscape:persp3d"
        inkscape:vp_x="0 : 526.18109 : 1"
@@ -24,6 +39,17 @@
        inkscape:vp_z="744.09448 : 526.18109 : 1"
        inkscape:persp3d-origin="372.04724 : 350.78739 : 1"
        id="perspective10" />
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3602"
+       id="radialGradient3608"
+       cx="39.642857"
+       cy="36.785717"
+       fx="39.642857"
+       fy="36.785717"
+       r="32.857143"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1.2541085,0.23836873,-0.22826083,1.2009286,-1.6768449,-16.84092)" />
   </defs>
   <sodipodi:namedview
      id="base"
@@ -33,16 +59,16 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="2.8"
-     inkscape:cx="83.811098"
-     inkscape:cy="11.080329"
+     inkscape:cx="82.168245"
+     inkscape:cy="-17.705383"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="1600"
-     inkscape:window-height="1153"
-     inkscape:window-x="1276"
-     inkscape:window-y="-4"
-     inkscape:window-maximized="1" />
+     inkscape:window-width="1484"
+     inkscape:window-height="933"
+     inkscape:window-x="1340"
+     inkscape:window-y="58"
+     inkscape:window-maximized="0" />
   <metadata
      id="metadata7">
     <rdf:RDF>
@@ -51,7 +77,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -59,23 +85,16 @@
      inkscape:label="Ebene 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(-165.71428,-260.9336)">
+     transform="translate(-167.35713,-238.57646)">
     <path
        sodipodi:type="arc"
-       style="fill:#184174;fill-opacity:1;fill-rule:nonzero;stroke:none"
-       id="path2816"
-       sodipodi:cx="208.57143"
-       sodipodi:cy="303.79074"
-       sodipodi:rx="42.857143"
-       sodipodi:ry="42.857143"
-       d="m 251.42857,303.79074 a 42.857143,42.857143 0 1 1 -85.71429,0 42.857143,42.857143 0 1 1 85.71429,0 z"
-       transform="matrix(0.4625,0,0,0.4625,94.071427,144.89466)" />
-    <rect
-       style="fill:#ff0000;fill-opacity:1;fill-rule:nonzero;stroke:none"
-       id="rect2823"
-       width="49.285713"
-       height="44.285713"
-       x="194.28571"
-       y="294.86218" />
+       style="fill:url(#radialGradient3608);fill-opacity:1;fill-rule:nonzero;stroke:#00b0ff;stroke-opacity:1"
+       id="path2828"
+       sodipodi:cx="47.142857"
+       sodipodi:cy="48.214287"
+       sodipodi:rx="32.857143"
+       sodipodi:ry="32.857143"
+       d="m 80,48.214287 a 32.857143,32.857143 0 1 1 -65.714287,0 32.857143,32.857143 0 1 1 65.714287,0 z"
+       transform="translate(165.21428,236.4336)" />
   </g>
 </svg>

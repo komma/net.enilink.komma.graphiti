@@ -14,12 +14,14 @@ Require-Bundle: org.eclipse.gef,
  net.enilink.komma.edit.ui,
  net.enilink.komma.workbench,
  org.eclipse.gmf.runtime.draw2d.ui.render,
- org.eclipse.gmf.runtime.draw2d.ui
+ org.eclipse.gmf.runtime.draw2d.ui,
+ org.eclipse.core.net
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: com.google.inject;version="2.0.0",
  com.google.inject.assistedinject;version="2.0.0",
  com.google.inject.binder;version="2.0.0",
  com.google.inject.multibindings;version="2.0.0",
+ com.google.inject.name;version="2.0.0",
  org.eclipse.graphiti.dt
 Bundle-Vendor: %providerName
