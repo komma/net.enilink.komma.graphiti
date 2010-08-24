@@ -21,7 +21,7 @@ import com.google.inject.Inject;
 
 import net.enilink.komma.concepts.IClass;
 import net.enilink.komma.concepts.IResource;
-import net.enilink.komma.graphiti.graphical.NodelFigure;
+import net.enilink.komma.graphiti.graphical.NodeFigure;
 import net.enilink.komma.graphiti.service.IDiagramService;
 
 public class SystemGraphicsAlgorithmRendererFactory implements
@@ -48,7 +48,7 @@ public class SystemGraphicsAlgorithmRendererFactory implements
 		return renderer;
 	}
 
-	private NodelFigure createNodeFigure(GraphicsAlgorithm ga) {
+	private NodeFigure createNodeFigure(GraphicsAlgorithm ga) {
 		URL url = null;
 
 		Object bo = diagramService.getRootBusinessObject(ga);
@@ -100,6 +100,6 @@ public class SystemGraphicsAlgorithmRendererFactory implements
 					new Path("/figures/node.svg"), null);
 		}
 
-		return new NodelFigure(url);
+		return new NodeFigure(url);
 	}
 }

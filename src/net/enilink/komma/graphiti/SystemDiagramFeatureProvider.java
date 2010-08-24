@@ -39,8 +39,8 @@ import net.enilink.komma.concepts.IProperty;
 import net.enilink.komma.concepts.IResource;
 import net.enilink.komma.graphiti.features.DeleteFeature;
 import net.enilink.komma.graphiti.features.DirectEditingFeature;
+import net.enilink.komma.graphiti.features.DrillDownFeature;
 import net.enilink.komma.graphiti.features.LayoutNodeFeature;
-import net.enilink.komma.graphiti.features.TestGreatFeature;
 import net.enilink.komma.graphiti.features.UpdateNodeFeature;
 import net.enilink.komma.graphiti.features.add.AddConnectionFeature;
 import net.enilink.komma.graphiti.features.add.AddNodeFeature;
@@ -221,6 +221,6 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 	@Override
 	public ICustomFeature[] getCustomFeatures(ICustomContext context) {
 		return new ICustomFeature[] { injector
-				.getInstance(TestGreatFeature.class) };
+				.getInstance(DrillDownFeature.class) };
 	}
 }

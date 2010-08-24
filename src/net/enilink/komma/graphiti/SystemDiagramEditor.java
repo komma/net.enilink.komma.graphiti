@@ -18,6 +18,10 @@ import net.enilink.komma.model.IModel;
 
 public class SystemDiagramEditor extends DiagramEditor implements
 		ISupportedEditor, IDiagramEditorExt {
+	/**
+	 * The Constant DIAGRAM_EDITOR_ID.
+	 */
+	public static final String DIAGRAM_EDITOR_ID = "de.fhg.iwu.komma.graphiti.test.SystemDiagramEditor"; //$NON-NLS-1$
 
 	@Override
 	public void doSave(IProgressMonitor monitor) {

@@ -38,20 +38,19 @@ public class SystemToolBehaviorProvider extends DefaultToolBehaviorProvider {
 		IFeatureProvider fp = getFeatureProvider();
 		ICustomFeature[] features = fp.getCustomFeatures(cc);
 
-		// Object bo =
-		// getBusinessObjectForPictogramElement(context.getPictogramElement());
-
-		ContextButtonEntry button = new ContextButtonEntry(features[0], cc);
-		button.setText("Great feature");
-		button.setDescription("Click here to whitness a very great feature!");
-		button.addDragAndDropFeature(features[0]);
-		button.setIconId(IPlatformImageConstants.IMG_EDIT_EXPAND);
-		retVal.getDomainSpecificContextButtons().add(button);
+		for (ICustomFeature feature : features) {
+			ContextButtonEntry button = new ContextButtonEntry(feature, cc);
+			button.setText(feature.getName());
+			button.setDescription(feature.getDescription());
+			button.addDragAndDropFeature(features[0]);
+			button.setIconId(feature.getImageId() != null ? feature
+					.getImageId() : IPlatformImageConstants.IMG_EDIT_EXPAND);
+			retVal.getDomainSpecificContextButtons().add(button);
+		}
 
 		return retVal;
 	}
 
-	// I copied this from the eCore example
 	private ICustomContext getCustomContext(IPictogramElementContext context) {
 		CustomContext result = new CustomContext(
 				new PictogramElement[] { context.getPictogramElement() });

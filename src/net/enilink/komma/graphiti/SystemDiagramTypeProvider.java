@@ -8,12 +8,17 @@ import org.eclipse.core.runtime.IAdapterFactory;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.gef.EditPart;
 import org.eclipse.graphiti.dt.AbstractDiagramTypeProvider;
+import org.eclipse.graphiti.dt.IDiagramTypeProvider;
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.mm.pictograms.Diagram;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.graphiti.platform.IDiagramEditor;
 import org.eclipse.graphiti.platform.ga.IGraphicsAlgorithmRendererFactory;
 import org.eclipse.graphiti.tb.IToolBehaviorProvider;
+import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.IEditorReference;
+import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.PlatformUI;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -29,6 +34,8 @@ import net.enilink.komma.model.IModel;
 import net.enilink.komma.model.IModelSet;
 import net.enilink.komma.core.IReference;
 import net.enilink.komma.core.IValue;
+import net.enilink.komma.core.URI;
+import net.enilink.komma.core.URIImpl;
 
 public class SystemDiagramTypeProvider extends AbstractDiagramTypeProvider
 		implements IEditingDomainProvider {
@@ -76,7 +83,17 @@ public class SystemDiagramTypeProvider extends AbstractDiagramTypeProvider
 	public void init(Diagram diagram, IDiagramEditor diagramEditor) {
 		super.init(diagram, diagramEditor);
 
-		injector = Guice.createInjector(new SystemDiagramModule(this));
+		injector = Guice.createInjector(new SystemDiagramModule(this) {
+			protected IModelSet provideModelSet(
+					IDiagramTypeProvider diagramTypeProvider) {
+				IModelSet sharedModelSet = getSharedModelSet();
+				if (sharedModelSet != null) {
+					return sharedModelSet;
+				}
+				return super.provideModelSet(diagramTypeProvider);
+			}
+
+		});
 
 		setFeatureProvider(injector.getInstance(IFeatureProvider.class));
 		platformAdapterFactory = new IAdapterFactory() {
@@ -110,6 +127,33 @@ public class SystemDiagramTypeProvider extends AbstractDiagramTypeProvider
 		modelSet.addListener(notificationListener);
 	}
 
+	protected IModelSet getSharedModelSet() {
+		// try to use existing model set
+		URI modelUri = URIImpl.createURI(getDiagram().eResource().getURI()
+				.appendFileExtension("owl").toString());
+
+		IWorkbenchPage page = PlatformUI.getWorkbench()
+				.getActiveWorkbenchWindow().getActivePage();
+		if (page != null) {
+			for (IEditorReference editorRef : page.getEditorReferences()) {
+				IEditorPart editor = editorRef.getEditor(false);
+				if (editor instanceof SystemDiagramEditor
+						&& editor != getDiagramEditor()) {
+					IDiagramTypeProvider typeProvider = ((IDiagramEditor) editor)
+							.getDiagramTypeProvider();
+					if (typeProvider instanceof SystemDiagramTypeProvider
+							&& modelUri
+									.equals(((SystemDiagramTypeProvider) typeProvider)
+											.getModel().getURI())) {
+						return ((SystemDiagramTypeProvider) typeProvider)
+								.getModel().getModelSet();
+					}
+				}
+			}
+		}
+		return null;
+	}
+
 	@Override
 	public IGraphicsAlgorithmRendererFactory getGraphicsAlgorithmRendererFactory() {
 		return injector.getInstance(IGraphicsAlgorithmRendererFactory.class);
@@ -135,12 +179,16 @@ public class SystemDiagramTypeProvider extends AbstractDiagramTypeProvider
 
 		IModelSet modelSet = injector.getInstance(IModelSet.class);
 		modelSet.removeListener(notificationListener);
-		modelSet.dispose();
+		if (getSharedModelSet() == null) {
+			// this editor has the only instance of this model set so just
+			// dispose it along with the associated editor support
+			modelSet.dispose();
 
-		KommaEditorSupport<?> editorSupport = injector
-				.getInstance(new Key<KommaEditorSupport<SystemDiagramEditor>>() {
-				});
-		editorSupport.dispose();
+			KommaEditorSupport<?> editorSupport = injector
+					.getInstance(new Key<KommaEditorSupport<SystemDiagramEditor>>() {
+					});
+			editorSupport.dispose();
+		}
 
 		super.dispose();
 	}

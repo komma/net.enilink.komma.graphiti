@@ -5,13 +5,14 @@ import java.util.Collection;
 import org.eclipse.graphiti.mm.StyleContainer;
 import org.eclipse.graphiti.mm.algorithms.styles.Style;
 import org.eclipse.graphiti.mm.pictograms.Diagram;
-import org.eclipse.graphiti.services.Graphiti;
 import org.eclipse.graphiti.services.IGaService;
 import org.eclipse.graphiti.util.ColorConstant;
 import org.eclipse.graphiti.util.IColorConstant;
 import org.eclipse.graphiti.util.PredefinedColoredAreas;
 
-public class StyleUtil {
+import com.google.inject.Inject;
+
+public class Styles {
 
 	private static final IColorConstant NODE_TEXT_FOREGROUND = new ColorConstant(
 			51, 51, 153);
@@ -19,12 +20,14 @@ public class StyleUtil {
 	private static final IColorConstant NODE_FOREGROUND = new ColorConstant(
 			255, 102, 0);
 
-	public static Style getStyleForNode(Diagram diagram) {
+	@Inject
+	IGaService gaService;
+
+	public Style getStyleForNode(Diagram diagram) {
 		final String styleId = "NODE"; //$NON-NLS-1$
 
 		Style style = findStyle(diagram, styleId);
 
-		IGaService gaService = Graphiti.getGaService();
 		if (style == null) { // style not found - create new style
 			style = gaService.createStyle(diagram, styleId);
 			style.setForeground(gaService.manageColor(diagram, NODE_FOREGROUND));
@@ -37,7 +40,7 @@ public class StyleUtil {
 		return style;
 	}
 
-	public static Style getStyleForNodeText(Diagram diagram) {
+	public Style getStyleForNodeText(Diagram diagram) {
 		final String styleId = "NODE-TEXT"; //$NON-NLS-1$
 
 		// this is a child style of the e-class-style
@@ -45,7 +48,6 @@ public class StyleUtil {
 		Style style = findStyle(parentStyle, styleId);
 
 		if (style == null) { // style not found - create new style
-			IGaService gaService = Graphiti.getGaService();
 			style = gaService.createStyle(diagram, styleId);
 			// "overwrites" values from parent style
 			style.setForeground(gaService.manageColor(diagram,
@@ -55,7 +57,7 @@ public class StyleUtil {
 	}
 
 	// find the style with a given id in the style-container, can return null
-	private static Style findStyle(StyleContainer styleContainer, String id) {
+	private Style findStyle(StyleContainer styleContainer, String id) {
 		// find and return style
 		Collection<Style> styles = styleContainer.getStyles();
 		if (styles != null) {

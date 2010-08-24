@@ -10,7 +10,6 @@ import org.eclipse.graphiti.mm.algorithms.Text;
 import org.eclipse.graphiti.mm.pictograms.Connection;
 import org.eclipse.graphiti.mm.pictograms.ConnectionDecorator;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
-import org.eclipse.graphiti.services.Graphiti;
 import org.eclipse.graphiti.services.IGaService;
 import org.eclipse.graphiti.services.IPeCreateService;
 
@@ -23,6 +22,12 @@ import net.enilink.komma.core.IStatement;
 public class AddConnectionFeature extends AbstractAddFeature {
 	@Inject
 	IModel model;
+
+	@Inject
+	IGaService gaService;
+
+	@Inject
+	IPeCreateService peCreateService;
 
 	@Inject
 	public AddConnectionFeature(IFeatureProvider fp) {
@@ -44,14 +49,12 @@ public class AddConnectionFeature extends AbstractAddFeature {
 		IAddConnectionContext addConContext = (IAddConnectionContext) context;
 		IStatement addedStmt = (IStatement) context.getNewObject();
 
-		IPeCreateService peCreateService = Graphiti.getPeCreateService();
 		// CONNECTION WITH POLYLINE
 		Connection connection = peCreateService
 				.createFreeFormConnection(getDiagram());
 		connection.setStart(addConContext.getSourceAnchor());
 		connection.setEnd(addConContext.getTargetAnchor());
 
-		IGaService gaService = Graphiti.getGaService();
 		Polyline polyline = gaService.createPolyline(connection);
 		// polyline.setStyle(StyleUtil.getStyleForEClass(getDiagram()));
 
@@ -79,8 +82,8 @@ public class AddConnectionFeature extends AbstractAddFeature {
 	}
 
 	private Polyline createArrow(GraphicsAlgorithmContainer gaContainer) {
-		Polyline polyline = Graphiti.getGaCreateService().createPolyline(
-				gaContainer, new int[] { -15, 10, 0, 0, -15, -10 });
+		Polyline polyline = gaService.createPolyline(gaContainer, new int[] {
+				-15, 10, 0, 0, -15, -10 });
 		// polyline.setStyle(StyleUtil.getStyleForEClass(getDiagram()));
 		return polyline;
 	}

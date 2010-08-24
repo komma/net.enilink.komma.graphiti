@@ -12,12 +12,12 @@ import org.eclipse.gmf.runtime.draw2d.ui.render.factory.RenderedImageFactory;
 import org.eclipse.gmf.runtime.draw2d.ui.render.figures.ScalableImageFigure;
 import org.eclipse.graphiti.platform.ga.IGraphicsAlgorithmRenderer;
 
-public class NodelFigure extends Figure implements IGraphicsAlgorithmRenderer,
+public class NodeFigure extends Figure implements IGraphicsAlgorithmRenderer,
 		IMapMode {
 
 	Shape shapeFigure;
 
-	public NodelFigure(URL url) {
+	public NodeFigure(URL url) {
 		setLayoutManager(new StackLayout());
 
 		ScalableImageFigure imageFigure = new ScalableImageFigure(

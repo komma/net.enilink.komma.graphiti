@@ -13,6 +13,13 @@ import org.eclipse.graphiti.dt.IDiagramTypeProvider;
 import org.eclipse.graphiti.features.ConfigurableFeatureProviderWrapper;
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.platform.ga.IGraphicsAlgorithmRendererFactory;
+import org.eclipse.graphiti.services.Graphiti;
+import org.eclipse.graphiti.services.IGaCreateService;
+import org.eclipse.graphiti.services.IGaLayoutService;
+import org.eclipse.graphiti.services.IGaService;
+import org.eclipse.graphiti.services.IPeCreateService;
+import org.eclipse.graphiti.services.IPeLayoutService;
+import org.eclipse.graphiti.services.IPeService;
 import org.eclipse.graphiti.tb.IToolBehaviorProvider;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
@@ -116,6 +123,15 @@ public class SystemDiagramModule extends AbstractModule {
 		}).to(EditorSupport.class);
 		bind(IViewerMenuSupport.class).to(EditorSupport.class);
 		bind(IDiagramService.class).to(DiagramService.class);
+
+		// Graphiti services
+		bind(IGaService.class).toInstance(Graphiti.getGaService());
+		bind(IGaCreateService.class).toInstance(Graphiti.getGaCreateService());
+		bind(IGaLayoutService.class).toInstance(Graphiti.getGaLayoutService());
+
+		bind(IPeService.class).toInstance(Graphiti.getPeService());
+		bind(IPeCreateService.class).toInstance(Graphiti.getPeCreateService());
+		bind(IPeLayoutService.class).toInstance(Graphiti.getPeLayoutService());
 	}
 
 	@Provides
@@ -135,6 +151,7 @@ public class SystemDiagramModule extends AbstractModule {
 	protected IModelSet provideModelSet(IDiagramTypeProvider diagramTypeProvider) {
 		org.eclipse.emf.common.util.URI uri = diagramTypeProvider.getDiagram()
 				.eResource().getURI();
+
 		IProject project = null;
 		if (uri.isPlatform()) {
 			IResource resource = ResourcesPlugin.getWorkspace().getRoot()
@@ -166,17 +183,23 @@ public class SystemDiagramModule extends AbstractModule {
 		URI modelUri = URIImpl.createURI(diagramTypeProvider.getDiagram()
 				.eResource().getURI().appendFileExtension("owl").toString());
 
-		IModel model = modelSet.createModel(modelUri);
-		Map<Object, Object> options = new HashMap<Object, Object>();
-		if (modelSet.getURIConverter().exists(modelUri, options)) {
-			try {
-				model.load(options);
-			} catch (IOException e) {
-				KommaGraphitiPlugin.INSTANCE.log(e);
+		IModel model = modelSet.getModel(modelUri, false);
+		if (model == null) {
+			model = modelSet.createModel(modelUri);
+		}
+		if (!model.isLoaded()) {
+			Map<Object, Object> options = new HashMap<Object, Object>();
+			if (modelSet.getURIConverter().exists(modelUri, options)) {
+				try {
+					model.load(options);
+				} catch (IOException e) {
+					KommaGraphitiPlugin.INSTANCE.log(e);
+				}
 			}
+
+			model.addImport(SYSTEMS.NAMESPACE_URI.trimFragment(), "systems");
 		}
 
-		model.addImport(SYSTEMS.NAMESPACE_URI.trimFragment(), "systems");
 		return model;
 	}
 

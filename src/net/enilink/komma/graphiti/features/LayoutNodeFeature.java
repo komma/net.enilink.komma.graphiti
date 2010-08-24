@@ -28,7 +28,6 @@ import org.eclipse.graphiti.mm.algorithms.PlatformGraphicsAlgorithm;
 import org.eclipse.graphiti.mm.algorithms.Text;
 import org.eclipse.graphiti.mm.pictograms.ContainerShape;
 import org.eclipse.graphiti.mm.pictograms.Shape;
-import org.eclipse.graphiti.services.Graphiti;
 import org.eclipse.graphiti.services.IGaService;
 
 import com.google.inject.Inject;
@@ -45,6 +44,9 @@ public class LayoutNodeFeature extends AbstractLayoutFeature {
 	private static final int MIN_WIDTH = 25;
 
 	private static final int IMAGE_PADDING = 3;
+
+	@Inject
+	IGaService gaService;
 
 	@Inject
 	public LayoutNodeFeature(IFeatureProvider fp) {
@@ -94,11 +96,17 @@ public class LayoutNodeFeature extends AbstractLayoutFeature {
 			if (childGa instanceof PlatformGraphicsAlgorithm
 					&& ((PlatformGraphicsAlgorithm) childGa).getId().equals(
 							SystemGraphicsAlgorithmRendererFactory.NODE_FIGURE)) {
-				childGa.setX(IMAGE_PADDING);
-				childGa.setY(IMAGE_PADDING);
+				// scale and center image
+				int origWidth = containerWidth - 2 * IMAGE_PADDING;
+				int origHeight = textY - 2 * IMAGE_PADDING;
 
-				childGa.setWidth(containerWidth - 2 * IMAGE_PADDING);
-				childGa.setHeight(textY - 2 * IMAGE_PADDING);
+				int length = Math.min(origWidth, origHeight);
+
+				childGa.setX(IMAGE_PADDING + (origWidth - length) / 2);
+				childGa.setY(IMAGE_PADDING + (origHeight - length) / 2);
+
+				childGa.setWidth(length);
+				childGa.setHeight(length);
 			} else {
 				childGa.setX(0);
 				childGa.setY(0);
@@ -113,7 +121,6 @@ public class LayoutNodeFeature extends AbstractLayoutFeature {
 		Collection<Shape> children = containerShape.getChildren();
 		for (Shape shape : children) {
 			GraphicsAlgorithm graphicsAlgorithm = shape.getGraphicsAlgorithm();
-			IGaService gaService = Graphiti.getGaService();
 			IDimension size = gaService.calculateSize(graphicsAlgorithm);
 			if (containerWidth != size.getWidth()) {
 				gaService.setWidth(graphicsAlgorithm, containerWidth);
