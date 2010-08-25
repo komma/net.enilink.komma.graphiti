@@ -11,7 +11,8 @@ import org.eclipse.swt.dnd.DND;
 
 import net.enilink.komma.edit.ui.dnd.LocalTransfer;
 
-public class SystemDiagramDropTargetListener extends AbstractTransferDropTargetListener {
+public class SystemDiagramDropTargetListener extends
+		AbstractTransferDropTargetListener {
 	public SystemDiagramDropTargetListener(EditPartViewer viewer) {
 		super(viewer, LocalTransfer.getInstance());
 	}
@@ -50,8 +51,7 @@ public class SystemDiagramDropTargetListener extends AbstractTransferDropTargetL
 
 	private class DropTargetCreationFactory implements CreationFactory {
 		public Object getNewObject() {
-			return LocalTransfer.getInstance().nativeToJava(
-					getCurrentEvent().currentDataType);
+			return getCurrentEvent().data;
 		}
 
 		public Object getObjectType() {
