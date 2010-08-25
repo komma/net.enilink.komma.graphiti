@@ -101,10 +101,7 @@ public class DrillDownFeature extends AbstractCustomFeature {
 					.toArray(new Diagram[0]);
 			if (possibleDiagramsList.size() == 1) {
 				final Diagram diagram = possibleDiagrams[0];
-				openDiagramEditor(diagram,
-						getTransActionalEditingDomainForNewDiagram(diagram),
-						getFeatureProvider().getDiagramTypeProvider()
-								.getProviderId(), false);
+				openDiagram(context, diagram);
 			} else {
 				ListDialog dialog = new ListDialog(PlatformUI.getWorkbench()
 						.getActiveWorkbenchWindow().getShell());
@@ -136,15 +133,18 @@ public class DrillDownFeature extends AbstractCustomFeature {
 				if (result != null) {
 					for (int i = 0; i < result.length; i++) {
 						Diagram diagram = (Diagram) result[i];
-						openDiagramEditor(
-								diagram,
-								getTransActionalEditingDomainForNewDiagram(diagram),
-								getFeatureProvider().getDiagramTypeProvider()
-										.getProviderId(), false);
+						openDiagram(context, diagram);
 					}
 				}
 			}
 		}
+	}
+
+	protected void openDiagram(ICustomContext context, Diagram diagram) {
+		openDiagramEditor(diagram,
+				getTransActionalEditingDomainForNewDiagram(diagram),
+				getFeatureProvider().getDiagramTypeProvider().getProviderId(),
+				false);
 	}
 
 	@Override

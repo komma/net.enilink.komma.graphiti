@@ -121,16 +121,18 @@ public class LayoutNodeFeature extends AbstractLayoutFeature {
 		Collection<Shape> children = containerShape.getChildren();
 		for (Shape shape : children) {
 			GraphicsAlgorithm graphicsAlgorithm = shape.getGraphicsAlgorithm();
-			IDimension size = gaService.calculateSize(graphicsAlgorithm);
-			if (containerWidth != size.getWidth()) {
-				gaService.setWidth(graphicsAlgorithm, containerWidth);
-				changed = true;
-			}
-			if (graphicsAlgorithm instanceof Text
-					&& textY != graphicsAlgorithm.getY()) {
-				graphicsAlgorithm.setHeight(20);
-				graphicsAlgorithm.setY(textY);
-				changed = true;
+			if (graphicsAlgorithm instanceof Text) {
+				IDimension size = gaService.calculateSize(graphicsAlgorithm);
+				if (containerWidth != size.getWidth()) {
+					gaService.setWidth(graphicsAlgorithm, containerWidth);
+					changed = true;
+				}
+
+				if (textY != graphicsAlgorithm.getY()) {
+					graphicsAlgorithm.setHeight(20);
+					graphicsAlgorithm.setY(textY);
+					changed = true;
+				}
 			}
 		}
 		return changed;

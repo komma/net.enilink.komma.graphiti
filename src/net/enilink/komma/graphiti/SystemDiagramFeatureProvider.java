@@ -40,6 +40,7 @@ import net.enilink.komma.concepts.IResource;
 import net.enilink.komma.graphiti.features.DeleteFeature;
 import net.enilink.komma.graphiti.features.DirectEditingFeature;
 import net.enilink.komma.graphiti.features.DrillDownFeature;
+import net.enilink.komma.graphiti.features.ExpandFeature;
 import net.enilink.komma.graphiti.features.LayoutNodeFeature;
 import net.enilink.komma.graphiti.features.UpdateNodeFeature;
 import net.enilink.komma.graphiti.features.add.AddConnectionFeature;
@@ -221,6 +222,7 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 	@Override
 	public ICustomFeature[] getCustomFeatures(ICustomContext context) {
 		return new ICustomFeature[] { injector
-				.getInstance(DrillDownFeature.class) };
+				.getInstance(DrillDownFeature.class), injector
+				.getInstance(ExpandFeature.class) };
 	}
 }
