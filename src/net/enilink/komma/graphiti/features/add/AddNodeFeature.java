@@ -120,17 +120,6 @@ public class AddNodeFeature extends AbstractAddShapeFeature {
 			text.setStyle(styles.getStyleForNodeText(getDiagram()));
 		}
 
-		// TOGGLE BUTTON
-		/*{
-			// create shape for toggle indicator
-			Shape shape = peService.createShape(container, false);
-
-			Ellipse ellipse = gaService.createEllipse(shape);
-			ellipse.setStyle(styles.getStyleForToggle(getDiagram()));
-
-			gaService.setLocationAndSize(ellipse, 5, 5, 10, 10);
-		}*/
-
 		peService.createChopboxAnchor(container);
 
 		layoutPictogramElement(container);
