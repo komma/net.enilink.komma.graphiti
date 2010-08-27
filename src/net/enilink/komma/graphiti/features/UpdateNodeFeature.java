@@ -5,10 +5,14 @@ import org.eclipse.graphiti.features.IReason;
 import org.eclipse.graphiti.features.context.IUpdateContext;
 import org.eclipse.graphiti.features.impl.AbstractUpdateFeature;
 import org.eclipse.graphiti.features.impl.Reason;
+import org.eclipse.graphiti.mm.algorithms.AbstractText;
 import org.eclipse.graphiti.mm.algorithms.Text;
+import org.eclipse.graphiti.mm.algorithms.styles.Orientation;
 import org.eclipse.graphiti.mm.pictograms.ContainerShape;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.graphiti.mm.pictograms.Shape;
+import org.eclipse.graphiti.services.IGaService;
+import org.eclipse.graphiti.services.IPeService;
 
 import com.google.inject.Inject;
 
@@ -19,6 +23,12 @@ import net.enilink.komma.edit.ui.provider.AdapterFactoryLabelProvider;
 public class UpdateNodeFeature extends AbstractUpdateFeature {
 	@Inject
 	IAdapterFactory adapterFactory;
+
+	@Inject
+	IGaService gaService;
+
+	@Inject
+	IPeService peService;
 
 	@Inject
 	public UpdateNodeFeature(IFeatureProvider fp) {
@@ -39,8 +49,9 @@ public class UpdateNodeFeature extends AbstractUpdateFeature {
 		if (pictogramElement instanceof ContainerShape) {
 			ContainerShape cs = (ContainerShape) pictogramElement;
 			for (Shape shape : cs.getChildren()) {
-				if (shape.getGraphicsAlgorithm() instanceof Text) {
-					Text text = (Text) shape.getGraphicsAlgorithm();
+				if (shape.getGraphicsAlgorithm() instanceof AbstractText) {
+					AbstractText text = (AbstractText) shape
+							.getGraphicsAlgorithm();
 					pictogramName = text.getValue();
 				}
 			}
@@ -78,15 +89,28 @@ public class UpdateNodeFeature extends AbstractUpdateFeature {
 			if (pictogramElement instanceof ContainerShape) {
 				ContainerShape cs = (ContainerShape) pictogramElement;
 				for (Shape shape : cs.getChildren()) {
-					if (shape.getGraphicsAlgorithm() instanceof Text) {
-						Text text = (Text) shape.getGraphicsAlgorithm();
+					if (shape.getGraphicsAlgorithm() instanceof AbstractText) {
+						AbstractText text = (AbstractText) shape
+								.getGraphicsAlgorithm();
+
+						if (text instanceof Text) {
+							AbstractText newText = gaService
+									.createMultiText(shape);
+							newText.setStyle(text.getStyle());
+
+							text = newText;
+						}
+						
+						text.setHorizontalAlignment(Orientation.ALIGNMENT_CENTER);
+						text.setVerticalAlignment(Orientation.ALIGNMENT_TOP);
 						text.setValue(businessName);
+
+						layoutPictogramElement(pictogramElement);
+
 						return true;
 					}
 				}
 			}
-
-			return true;
 		}
 
 		return false;
