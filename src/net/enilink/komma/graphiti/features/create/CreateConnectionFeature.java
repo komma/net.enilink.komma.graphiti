@@ -35,7 +35,7 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature {
 			+ "		?property rdfs:range ?objectType ." //
 			+ "} UNION {" //
 			+ "		?subjectType rdfs:subClassOf ?restriction ."
-			+ "		?restriction owl:onProperty ?property" //
+			+ "		?restriction owl:onProperty ?superProperty . ?property rdfs:subPropertyOf ?superProperty ." //
 			+ "		{?restriction owl:allValuesFrom ?objectType} UNION {?restriction owl:someValuesFrom ?objectType}" //
 			+ "}" //
 			+ "OPTIONAL {" //
@@ -45,7 +45,6 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature {
 			+ "		FILTER (?restriction != ?otherRestr && ?someSubjectType != ?otherRestr)"
 			+ "}"
 			+ "FILTER (?subjectType != ?restriction && ! bound(?complementClass))"
-			// + "?property rdfs:subPropertyOf komma:relatedTo ." //
 			+ "OPTIONAL {" //
 			+ "	?otherProperty rdfs:subPropertyOf ?property ." //
 			+ "	{" //

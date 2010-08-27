@@ -25,7 +25,7 @@ import org.eclipse.graphiti.features.context.IPictogramElementContext;
 import org.eclipse.graphiti.features.context.IUpdateContext;
 import org.eclipse.graphiti.features.custom.ICustomFeature;
 import org.eclipse.graphiti.features.impl.IIndependenceSolver;
-import org.eclipse.graphiti.mm.algorithms.Text;
+import org.eclipse.graphiti.mm.algorithms.AbstractText;
 import org.eclipse.graphiti.mm.pictograms.ContainerShape;
 import org.eclipse.graphiti.mm.pictograms.Diagram;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
@@ -207,7 +207,7 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 	public IDirectEditingFeature getDirectEditingFeature(
 			IDirectEditingContext context) {
 		PictogramElement pe = context.getPictogramElement();
-		if (pe.getGraphicsAlgorithm() instanceof Text) {
+		if (pe.getGraphicsAlgorithm() instanceof AbstractText) {
 			while (!(pe instanceof ContainerShape || pe.eContainer() instanceof Diagram)) {
 				pe = (PictogramElement) pe.eContainer();
 			}

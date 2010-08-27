@@ -4,7 +4,7 @@ import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.context.IContext;
 import org.eclipse.graphiti.features.context.IDirectEditingContext;
 import org.eclipse.graphiti.features.impl.AbstractDirectEditingFeature;
-import org.eclipse.graphiti.mm.algorithms.Text;
+import org.eclipse.graphiti.mm.algorithms.AbstractText;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 
 import com.google.inject.Inject;
@@ -23,7 +23,7 @@ public class DirectEditingFeature extends AbstractDirectEditingFeature {
 
 	@Override
 	public int getEditingType() {
-		return TYPE_TEXT;
+		return TYPE_MULTILINETEXT;
 	}
 
 	@Override
@@ -42,10 +42,9 @@ public class DirectEditingFeature extends AbstractDirectEditingFeature {
 
 	@Override
 	public String checkValueValid(String value, IDirectEditingContext context) {
-		if (value.length() < 1)
+		if (value.length() < 1) {
 			return "Please enter a name.";
-		if (value.contains("\n"))
-			return "Line breaks are not allowed in a name.";
+		}
 
 		return null;
 	}
@@ -76,7 +75,7 @@ public class DirectEditingFeature extends AbstractDirectEditingFeature {
 	}
 
 	IResource getResource(PictogramElement pe) {
-		if (pe.getGraphicsAlgorithm() instanceof Text) {
+		if (pe.getGraphicsAlgorithm() instanceof AbstractText) {
 			final Object bo = diagramService.getRootBusinessObject(pe);
 
 			if (bo instanceof IResource) {

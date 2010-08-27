@@ -3,12 +3,10 @@ package net.enilink.komma.graphiti.features.add;
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.context.IAddContext;
 import org.eclipse.graphiti.features.impl.AbstractAddShapeFeature;
-import org.eclipse.graphiti.mm.algorithms.Ellipse;
+import org.eclipse.graphiti.mm.algorithms.AbstractText;
 import org.eclipse.graphiti.mm.algorithms.GraphicsAlgorithm;
 import org.eclipse.graphiti.mm.algorithms.Rectangle;
 import org.eclipse.graphiti.mm.algorithms.RoundedRectangle;
-import org.eclipse.graphiti.mm.algorithms.Text;
-import org.eclipse.graphiti.mm.algorithms.styles.Orientation;
 import org.eclipse.graphiti.mm.pictograms.ContainerShape;
 import org.eclipse.graphiti.mm.pictograms.Diagram;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
@@ -93,7 +91,7 @@ public class AddNodeFeature extends AbstractAddShapeFeature {
 			Rectangle invisibleRectangle = gaService
 					.createInvisibleRectangle(container);
 			gaService.setLocationAndSize(invisibleRectangle, context.getX(),
-					context.getY(), width, height + 20);
+					context.getY(), width, height);
 
 			RoundedRectangle roundedRectangle = gaService
 					.createRoundedRectangle(invisibleRectangle, 15, 15);
@@ -114,27 +112,13 @@ public class AddNodeFeature extends AbstractAddShapeFeature {
 					adapterFactory);
 
 			// create and set text graphics algorithm
-			Text text = gaService.createDefaultText(shape,
+			AbstractText text = gaService.createDefaultMultiText(shape,
 					labelProvider.getText(node));
 
 			labelProvider.dispose();
 
 			text.setStyle(styles.getStyleForNodeText(getDiagram()));
-
-			text.setHorizontalAlignment(Orientation.ALIGNMENT_CENTER);
-			text.setVerticalAlignment(Orientation.ALIGNMENT_TOP);
 		}
-
-		// TOGGLE BUTTON
-		/*{
-			// create shape for toggle indicator
-			Shape shape = peService.createShape(container, false);
-
-			Ellipse ellipse = gaService.createEllipse(shape);
-			ellipse.setStyle(styles.getStyleForToggle(getDiagram()));
-
-			gaService.setLocationAndSize(ellipse, 5, 5, 10, 10);
-		}*/
 
 		peService.createChopboxAnchor(container);
 
