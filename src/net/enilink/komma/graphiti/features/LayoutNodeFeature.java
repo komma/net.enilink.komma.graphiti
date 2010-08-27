@@ -15,7 +15,6 @@
  *******************************************************************************/
 package net.enilink.komma.graphiti.features;
 
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -23,9 +22,9 @@ import org.eclipse.graphiti.datatypes.IDimension;
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.context.ILayoutContext;
 import org.eclipse.graphiti.features.impl.AbstractLayoutFeature;
+import org.eclipse.graphiti.mm.algorithms.AbstractText;
 import org.eclipse.graphiti.mm.algorithms.GraphicsAlgorithm;
 import org.eclipse.graphiti.mm.algorithms.PlatformGraphicsAlgorithm;
-import org.eclipse.graphiti.mm.algorithms.Text;
 import org.eclipse.graphiti.mm.pictograms.ContainerShape;
 import org.eclipse.graphiti.mm.pictograms.Shape;
 import org.eclipse.graphiti.services.IGaService;
@@ -85,7 +84,18 @@ public class LayoutNodeFeature extends AbstractLayoutFeature {
 			changed = true;
 		}
 
-		int textY = containerHeight - 20;
+		int textHeight = 0;
+		for (Shape shape : containerShape.getChildren()) {
+			GraphicsAlgorithm graphicsAlgorithm = shape.getGraphicsAlgorithm();
+			if (graphicsAlgorithm instanceof AbstractText) {
+				String value = ((AbstractText) graphicsAlgorithm).getValue();
+				if (value == null)
+					continue;
+				textHeight = ((AbstractText) graphicsAlgorithm).getValue()
+						.split("\r?\n").length * 20;
+			}
+		}
+		int textY = containerHeight - textHeight;
 
 		// resize all child GAs
 		Queue<GraphicsAlgorithm> queue = new LinkedList<GraphicsAlgorithm>(
@@ -112,16 +122,15 @@ public class LayoutNodeFeature extends AbstractLayoutFeature {
 				childGa.setY(0);
 
 				childGa.setWidth(containerWidth);
-				childGa.setHeight(textY);
+				childGa.setHeight(containerHeight);
 
 				queue.addAll(childGa.getGraphicsAlgorithmChildren());
 			}
 		}
 
-		Collection<Shape> children = containerShape.getChildren();
-		for (Shape shape : children) {
+		for (Shape shape : containerShape.getChildren()) {
 			GraphicsAlgorithm graphicsAlgorithm = shape.getGraphicsAlgorithm();
-			if (graphicsAlgorithm instanceof Text) {
+			if (graphicsAlgorithm instanceof AbstractText) {
 				IDimension size = gaService.calculateSize(graphicsAlgorithm);
 				if (containerWidth != size.getWidth()) {
 					gaService.setWidth(graphicsAlgorithm, containerWidth);
@@ -129,7 +138,7 @@ public class LayoutNodeFeature extends AbstractLayoutFeature {
 				}
 
 				if (textY != graphicsAlgorithm.getY()) {
-					graphicsAlgorithm.setHeight(20);
+					graphicsAlgorithm.setHeight(textHeight);
 					graphicsAlgorithm.setY(textY);
 					changed = true;
 				}
