@@ -34,6 +34,7 @@ import org.eclipse.graphiti.ui.features.DefaultFeatureProvider;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 
+import net.enilink.vocab.systems.Interface;
 import net.enilink.vocab.systems.SYSTEMS;
 import net.enilink.komma.concepts.IProperty;
 import net.enilink.komma.concepts.IResource;
@@ -41,12 +42,15 @@ import net.enilink.komma.graphiti.features.DeleteFeature;
 import net.enilink.komma.graphiti.features.DirectEditingFeature;
 import net.enilink.komma.graphiti.features.DrillDownFeature;
 import net.enilink.komma.graphiti.features.ExpandFeature;
+import net.enilink.komma.graphiti.features.ShowConnectorsFeature;
 import net.enilink.komma.graphiti.features.LayoutNodeFeature;
+import net.enilink.komma.graphiti.features.ShowPoolObjectsFeature;
 import net.enilink.komma.graphiti.features.UpdateNodeFeature;
 import net.enilink.komma.graphiti.features.add.AddConnectionFeature;
 import net.enilink.komma.graphiti.features.add.AddNodeFeature;
 import net.enilink.komma.graphiti.features.create.CreateConnectionFeature;
 import net.enilink.komma.graphiti.features.create.CreateNodeFeatureFactory;
+import net.enilink.komma.graphiti.features.move.TestMoveConnectorFeature;
 import net.enilink.komma.model.IModel;
 import net.enilink.komma.core.IEntity;
 import net.enilink.komma.core.IReference;
@@ -172,8 +176,8 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 	public IMoveShapeFeature getMoveShapeFeature(IMoveShapeContext context) {
 		Object bo = getBusinessObjectForPictogramElement(context.getShape());
 
-		// if (bo instanceof IDirectedFlowConnector)
-		// return new TestMoveConnectorFeature(this);
+		if (bo instanceof Interface)
+			return new TestMoveConnectorFeature(this);
 
 		return super.getMoveShapeFeature(context);
 	}
@@ -223,6 +227,8 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 	public ICustomFeature[] getCustomFeatures(ICustomContext context) {
 		return new ICustomFeature[] { injector
 				.getInstance(DrillDownFeature.class), injector
-				.getInstance(ExpandFeature.class) };
+				.getInstance(ExpandFeature.class),
+				injector.getInstance(ShowConnectorsFeature.class),
+				injector.getInstance(ShowPoolObjectsFeature.class)};
 	}
 }
