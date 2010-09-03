@@ -35,6 +35,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 
 import net.enilink.vocab.systems.SYSTEMS;
+import net.enilink.komma.concepts.Connection;
 import net.enilink.komma.concepts.IProperty;
 import net.enilink.komma.concepts.IResource;
 import net.enilink.komma.graphiti.features.DeleteFeature;
@@ -149,10 +150,10 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 	@Override
 	public IAddFeature getAddFeature(IAddContext context) {
 		Object newObject = context.getNewObject();
-		if (newObject instanceof IEntity && !(newObject instanceof IProperty)) {
+		if (newObject instanceof IEntity && !(newObject instanceof IProperty) && !(newObject instanceof Connection)) {
 			return injector.getInstance(AddNodeFeature.class);
 		}
-		if (newObject instanceof IStatement) {
+		if (newObject instanceof IStatement || newObject instanceof Connection) {
 			return injector.getInstance(AddConnectionFeature.class);
 		}
 		return super.getAddFeature(context);

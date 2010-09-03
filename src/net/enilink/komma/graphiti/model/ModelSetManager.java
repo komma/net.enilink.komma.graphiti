@@ -48,6 +48,11 @@ public class ModelSetManager {
 				.getBundleMetaInfLocations("net.enilink.vocab.systems")) {
 			modelSet.getModule().addLibrary(url);
 		}
+		
+		for (URL url : KommaUtil
+				.getBundleMetaInfLocations("net.enilink.modeling.bpmn2")) {
+			modelSet.getModule().addLibrary(url);
+		}
 
 		initializeEditingDomain(modelSet);
 		return modelSet;
