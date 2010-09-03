@@ -1,5 +1,8 @@
 package net.enilink.komma.graphiti.features.create;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.context.ICreateConnectionContext;
 import org.eclipse.graphiti.features.context.impl.AddConnectionContext;
@@ -12,7 +15,9 @@ import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 
 import com.google.inject.Inject;
 
+import net.enilink.commons.iterator.IExtendedIterator;
 import net.enilink.komma.common.adapter.IAdapterFactory;
+import net.enilink.komma.concepts.IClass;
 import net.enilink.komma.concepts.IProperty;
 import net.enilink.komma.edit.ui.provider.AdapterFactoryLabelProvider;
 import net.enilink.komma.graphiti.IDiagramEditorExt;
@@ -60,6 +65,70 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature {
 			+ "FILTER (! bound(?otherProperty))" //
 			+ "} ORDER BY ?property";
 
+	private static final String SELECT_APPLICABLE_CONNECTION_OBJECTS = ISparqlConstants.PREFIX //
+			+ "SELECT DISTINCT ?connectionType ?subjectProperty ?objectProperty " //
+			+ "WHERE { " //
+			+ "?subject rdf:type ?subjectType ." //
+			+ "?object rdf:type ?objectType . " //
+			+ "{" //
+			+ "		?subjectProperty rdfs:domain ?subjectType ." //
+			+ "		?subjectProperty rdfs:range ?connectionType ." //
+			+ "} UNION {" //
+			+ "		?subjectType rdfs:subClassOf ?subjectRestriction ."
+			+ "		?subjectRestriction owl:onProperty ?subjectProperty" //
+			+ "		{?subjectRestriction owl:allValuesFrom ?connectionType} UNION {?subjectRestriction owl:someValuesFrom ?connectionType}" //
+			+ "}" //
+			+ "?connectionType rdfs:subClassOf komma:Connection ."
+			+ "{" //
+			+ "		?objectProperty rdfs:domain ?connectionType ." //
+			+ "		?objectProperty rdfs:range ?objectType ." //
+			+ "} UNION {" //
+			+ "		?connectionType rdfs:subClassOf ?objectRestriction ."
+			+ "		?objectRestriction owl:onProperty ?objectProperty" //
+			+ "		{?objectRestriction owl:allValuesFrom ?objectType} UNION {?objectRestriction owl:someValuesFrom ?objectType}" //
+			+ "}" //
+
+			/*
+			 * + "OPTIONAL {" // + "		?subject rdf:type ?someSubjectType . " //
+			 * +
+			 * "		?someSubjectType rdfs:subClassOf ?otherRestr . ?otherRestr owl:onProperty ?property; owl:allValuesFrom ?someRange . "
+			 * // +
+			 * "		?someRange owl:complementOf ?complementClass . ?object rdf:type [rdfs:subClassOf ?complementClass] . "
+			 * // +
+			 * "		FILTER (?restriction != ?otherRestr && ?someSubjectType != ?otherRestr)"
+			 * // + "}"
+			 */
+
+			+ "FILTER (?subjectType != ?subjectRestriction && ?objectType != ?objectRestriction)"
+			// + "?property rdfs:subPropertyOf komma:relatedTo ." //
+			+ "OPTIONAL {" //
+			+ "	?otherSubjectProperty rdfs:subPropertyOf ?subjectProperty ." //
+			+ "	?otherObjectProperty rdfs:subPropertyOf ?objectProperty ." //
+			+ "	{" //
+			+ "		?otherSubjectProperty rdfs:domain ?subjectType ." //
+			+ "		?otherSubjectProperty rdfs:range ?connectionType ." //
+			+ "	} UNION {" //
+			+ "		?subjectType rdfs:subClassOf ?otherSubjectRestriction ."
+			+ "		?otherSubjectRestriction owl:onProperty ?otherSubjectProperty ." //
+			+ "		{?otherSubjectRestriction owl:allValuesFrom ?connectionType} UNION {?otherSubjectRestriction owl:someValuesFrom ?connectionType}"
+			+ "	}" //
+			+ "	{" //
+			+ "		?otherObjectProperty rdfs:domain ?connectionType ." //
+			+ "		?otherObjectProperty rdfs:range ?objectType ." //
+			+ "	} UNION {" //
+			+ "		?connectionType rdfs:subClassOf ?otherObjectRestriction ."
+			+ "		?otherObjectRestriction owl:onProperty ?otherObjectProperty ." //
+			+ "		{?otherObjectRestriction owl:allValuesFrom ?objectType} UNION {?otherObjectRestriction owl:someValuesFrom ?objectType}"
+			+ "	}" //
+			+ "	FILTER (?subjectProperty != ?otherSubjectProperty && ?objectProperty != ?otherObjectProperty)" //
+			+ "}" //
+			+ "FILTER (! bound(?otherSubjectProperty) && ! bound(?otherObjectProperty))" //
+
+			+ "} ORDER BY ?connectionType";
+
+	@Inject
+	IURIFactory uriFactory;
+	
 	@Inject
 	IAdapterFactory adapterFactory;
 
@@ -97,6 +166,36 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature {
 		return false;
 	}
 
+	class ConnectionContainer {
+		private IClass concept;
+		private IProperty sourceProp;
+		private IProperty targetProp;
+
+		public ConnectionContainer(IClass concept, IProperty sourceProp,
+				IProperty targetProp) {
+			this.concept = concept;
+			this.sourceProp = sourceProp;
+			this.targetProp = targetProp;
+		}
+
+		public String toString() {
+			return sourceProp.getURI() + " -> " + concept.getURI() + " -> "
+					+ targetProp.getURI();
+		}
+		
+		public IClass getConcept() {
+			return concept;
+		}
+		
+		public IProperty getSourceProperty() {
+			return sourceProp;
+		}
+		
+		public IProperty getTargetProperty() {
+			return targetProp;
+		}
+	}
+
 	public Connection create(ICreateConnectionContext context) {
 		Connection newConnection = null;
 
@@ -105,44 +204,100 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature {
 		IEntity target = getEntity(context.getTargetAnchor());
 
 		if (source != null && target != null) {
-			IProperty[] properties = source.getKommaManager()
-					.createQuery(SELECT_APPLICABLE_CONNECTION_PROPERTIES)
+
+			// query for connection objects between source and target
+
+			IExtendedIterator<?> connClassAndProps = source.getKommaManager()
+					.createQuery(SELECT_APPLICABLE_CONNECTION_OBJECTS)
 					.setParameter("subject", source)
-					.setParameter("object", target).evaluate(IProperty.class)
-					.toList().toArray(new IProperty[0]);
+					.setParameter("object", target).evaluate();
 
-			if (properties.length == 0) {
-				return null;
+			List<ConnectionContainer> connections = new ArrayList<ConnectionContainer>();
+			while (connClassAndProps.hasNext()) {
+				Object[] results = (Object[]) connClassAndProps.next();
+				// expect connection class, source and target properties
+				if (results.length == 3)
+					connections.add(new ConnectionContainer(
+							(IClass) results[0], (IProperty) results[1],
+							(IProperty) results[2]));
 			}
 
-			IProperty property = null;
-			if (properties.length == 1) {
-				property = properties[0];
-			} else {
-				ElementListSelectionDialog selectionDialog = new ElementListSelectionDialog(
-						PlatformUI.getWorkbench().getActiveWorkbenchWindow()
-								.getShell(), new AdapterFactoryLabelProvider(
-								adapterFactory));
-				selectionDialog.setHelpAvailable(false);
-				selectionDialog.setElements(properties);
-				if (selectionDialog.open() == Window.OK) {
-					property = (IProperty) selectionDialog.getFirstResult();
+			// connection objects or plain connections
+			if (!connections.isEmpty()) {
+				// objects
+				ConnectionContainer selection = null;
+				if (connections.size() == 1) {
+					selection = connections.get(0);
+				} else {
+					ElementListSelectionDialog selectionDialog = new ElementListSelectionDialog(
+							PlatformUI.getWorkbench()
+									.getActiveWorkbenchWindow().getShell(),
+							new AdapterFactoryLabelProvider(adapterFactory));
+					selectionDialog.setHelpAvailable(false);
+					selectionDialog.setElements(connections.toArray(new ConnectionContainer[0]));
+					if (selectionDialog.open() == Window.OK) {
+						selection = (ConnectionContainer) selectionDialog.getFirstResult();
+					}
 				}
+
+				if (selection == null) {
+					return null;
+				}
+				
+				// create new business object
+				IEntity connObject = model.getManager().createNamed(uriFactory.createURI(), selection.getConcept());
+				IStatement stmtLeft = createStatement(source, selection.getSourceProperty(), connObject);
+				IStatement stmtRight = createStatement(connObject, selection.getTargetProperty(), target);
+
+				// add connection for business object
+				AddConnectionContext addContext = new AddConnectionContext(
+						context.getSourceAnchor(), context.getTargetAnchor());
+				addContext.setNewObject(connObject);
+				newConnection = (Connection) getFeatureProvider()
+						.addIfPossible(addContext);
+				
+			} else {
+				// plain
+				IProperty[] properties = source.getKommaManager()
+						.createQuery(SELECT_APPLICABLE_CONNECTION_PROPERTIES)
+						.setParameter("subject", source)
+						.setParameter("object", target)
+						.evaluate(IProperty.class).toList()
+						.toArray(new IProperty[0]);
+
+				if (properties.length == 0) {
+					return null;
+				}
+
+				IProperty property = null;
+				if (properties.length == 1) {
+					property = properties[0];
+				} else {
+					ElementListSelectionDialog selectionDialog = new ElementListSelectionDialog(
+							PlatformUI.getWorkbench()
+									.getActiveWorkbenchWindow().getShell(),
+							new AdapterFactoryLabelProvider(adapterFactory));
+					selectionDialog.setHelpAvailable(false);
+					selectionDialog.setElements(properties);
+					if (selectionDialog.open() == Window.OK) {
+						property = (IProperty) selectionDialog.getFirstResult();
+					}
+				}
+
+				if (property == null) {
+					return null;
+				}
+
+				// create new business object
+				IStatement stmt = createStatement(source, property, target);
+
+				// add connection for business object
+				AddConnectionContext addContext = new AddConnectionContext(
+						context.getSourceAnchor(), context.getTargetAnchor());
+				addContext.setNewObject(stmt);
+				newConnection = (Connection) getFeatureProvider()
+						.addIfPossible(addContext);
 			}
-
-			if (property == null) {
-				return null;
-			}
-
-			// create new business object
-			IStatement stmt = createStatement(source, property, target);
-
-			// add connection for business object
-			AddConnectionContext addContext = new AddConnectionContext(
-					context.getSourceAnchor(), context.getTargetAnchor());
-			addContext.setNewObject(stmt);
-			newConnection = (Connection) getFeatureProvider().addIfPossible(
-					addContext);
 		}
 
 		return newConnection;

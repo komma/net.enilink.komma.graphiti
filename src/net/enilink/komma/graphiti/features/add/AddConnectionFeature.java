@@ -17,6 +17,7 @@ import com.google.inject.Inject;
 
 import net.enilink.komma.model.IModel;
 import net.enilink.komma.model.ModelUtil;
+import net.enilink.komma.core.IEntity;
 import net.enilink.komma.core.IStatement;
 
 public class AddConnectionFeature extends AbstractAddFeature {
@@ -40,6 +41,11 @@ public class AddConnectionFeature extends AbstractAddFeature {
 				&& context.getNewObject() instanceof IStatement) {
 			return true;
 		}
+		
+		if (context instanceof IAddConnectionContext
+				&& context.getNewObject() instanceof net.enilink.komma.concepts.Connection) {
+			return true;
+		}
 
 		return false;
 	}
@@ -47,7 +53,13 @@ public class AddConnectionFeature extends AbstractAddFeature {
 	@Override
 	public PictogramElement add(IAddContext context) {
 		IAddConnectionContext addConContext = (IAddConnectionContext) context;
-		IStatement addedStmt = (IStatement) context.getNewObject();
+		Object addedConnection = context.getNewObject();
+		String label = null;
+		if (addedConnection instanceof IStatement) {
+			label = ModelUtil.getLabel(model.resolve(((IStatement)addedConnection).getPredicate()));
+		} else if (addedConnection instanceof Connection) {
+			label = ModelUtil.getLabel(model.resolve(((IEntity) addedConnection).getReference()));
+		}
 
 		// CONNECTION WITH POLYLINE
 		Connection connection = peCreateService
@@ -59,7 +71,7 @@ public class AddConnectionFeature extends AbstractAddFeature {
 		// polyline.setStyle(StyleUtil.getStyleForEClass(getDiagram()));
 
 		// create link and wire it
-		link(connection, addedStmt);
+		link(connection, addedConnection);
 
 		// add dynamic text decorator for the reference name
 		ConnectionDecorator textDecorator = peCreateService
@@ -68,7 +80,7 @@ public class AddConnectionFeature extends AbstractAddFeature {
 		// text.setStyle(StyleUtil.getStyleForEClassText((getDiagram())));
 		gaService.setLocation(text, 10, 0);
 		// set reference name in the text decorator
-		text.setValue(ModelUtil.getLabel(model.resolve(addedStmt.getPredicate())));
+		text.setValue(label);
 
 		// add static graphical decorators (composition and navigable)
 		ConnectionDecorator cd;
@@ -80,7 +92,7 @@ public class AddConnectionFeature extends AbstractAddFeature {
 
 		return connection;
 	}
-
+	
 	private Polyline createArrow(GraphicsAlgorithmContainer gaContainer) {
 		Polyline polyline = gaService.createPolyline(gaContainer, new int[] {
 				-15, 10, 0, 0, -15, -10 });
