@@ -10,6 +10,7 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.graphiti.features.IAddFeature;
 import org.eclipse.graphiti.features.IFeatureProvider;
+import org.eclipse.graphiti.features.context.IContext;
 import org.eclipse.graphiti.features.context.ICustomContext;
 import org.eclipse.graphiti.features.context.impl.AddConnectionContext;
 import org.eclipse.graphiti.features.context.impl.AddContext;
@@ -89,7 +90,7 @@ public class ShowPoolObjectsFeature extends AbstractCustomFeature {
 		if(!cs.getContainer().equals(getDiagram()))
 			return false;// only allow this feature for first level instances
 		
-		if(bo instanceof IReference)
+		if(bo instanceof Station)//IReference)
 			return true;// possibly we might want to check whether this item has a subordered diagram?
 		
 		return false;
@@ -122,19 +123,20 @@ public class ShowPoolObjectsFeature extends AbstractCustomFeature {
 		
 		int width = oldGA.getWidth();
 		int height = oldGA.getHeight();
+		int x = oldGA.getX(),y = oldGA.getY();
 		
 		// reduce old cs size
-		oldGA.setWidth(width >> 1);
-		oldGA.setHeight(height >> 1);
+		//oldGA.
+		//oldGA.setWidth(width >> 1);
+		//oldGA.setHeight(height >> 1);
+		gaService.setLocationAndSize(oldGA, 5, 5, width >> 1, height >> 1);
 		
 		width <<= 1;
 		height <<= 1;
 		
-		int x = oldGA.getX(),y = oldGA.getY();
-		
 		// position in upper left corner
-		oldGA.setX(5);
-		oldGA.setY(5);
+		//oldGA.setX(5);
+		//oldGA.setY(5);
 		
 		RoundedRectangle rr = gaService.createRoundedRectangle(newCS, 10, 10);
 		gaService.setLocationAndSize(rr, x, y, width, height);
@@ -144,26 +146,44 @@ public class ShowPoolObjectsFeature extends AbstractCustomFeature {
 		oldCS.setContainer(newCS);
 		
 		int shiftX = Integer.MAX_VALUE,shiftY = Integer.MAX_VALUE;
+		int maxX = Integer.MIN_VALUE,maxY = Integer.MIN_VALUE;
+		int currX,currY,nChildren = 0;
 		
-		// determine the number of pixels to shift all elements
+		// determine the number of pixels to shift all elements, i.e. the smallest x and y coordinates of the contained elements
+		// also determine maximum values
 		for(Shape s: diq.getChildren()){
 			GraphicsAlgorithm ga = s.getGraphicsAlgorithm();
+			currX = ga.getX();
+			currY = ga.getY();
 			
-			if(shiftX > ga.getX())
-				shiftX = ga.getX();
-			if(shiftY > ga.getY())
-				shiftY = ga.getY();
+			if(shiftX > currX)
+				shiftX = currX;
+			if(shiftY > currY)
+				shiftY = currY;
+			
+			if((currX + ga.getWidth()) > maxX)
+				maxX = currX + ga.getWidth();
+			if((currX + ga.getHeight()) > maxY)
+				maxY = currY + ga.getHeight();
+			
+			nChildren++;
 		}
 		
 		// now move all shapes
-		shiftX = 5 - shiftX;
-		shiftY = 70 - shiftY;
+		//shiftX = 5 - shiftX;
+		//shiftY = 70 - shiftY;
+		maxX -= shiftX;
+		maxY -= shiftY;
+		
+		float fXAspect = (float)(width - 10) / (float)maxX;
+		float fYAspect = (float)(height - 75) / (float)maxY;
 		
 		for(Shape s: diq.getChildren()){
 			GraphicsAlgorithm ga = s.getGraphicsAlgorithm();
 			
-			ga.setX(ga.getX() + shiftX);
-			ga.setY(ga.getY() + shiftY);
+			// position child elements
+			ga.setX((int)((ga.getX() - shiftX) * fXAspect) + 5);
+			ga.setY((int)((ga.getY() - shiftY) * fYAspect) + 70);
 		}
 		
 		newCS.getChildren().addAll(diq.getChildren());

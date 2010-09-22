@@ -125,6 +125,7 @@ public class ShowConnectorsFeature extends AbstractCustomFeature {
 					
 					TestConnector connector = (TestConnector)model.getManager().createNamed(uriFactory.createURI(), SYSTEMS.TYPE_TESTCONNECTOR);
 					connector.setSystemsConnectedFrom(bo);
+					peService.createChopboxAnchor(newShape);
 					
 					// link the newly created shape with it's bo
 					link(newShape,connector);
@@ -157,6 +158,7 @@ public class ShowConnectorsFeature extends AbstractCustomFeature {
 	@Override
 	public boolean canExecute(ICustomContext context){
 		PictogramElement[] pes = context.getPictogramElements();
+		Collection<Diagram> linkedDiagrams = getLinkedDiagrams(pes[0]);
 		// first check, if one EClass is selected
 		if (pes != null && pes.length == 1) {
 			Object bo = getBusinessObjectForPictogramElement(pes[0]);
@@ -164,7 +166,8 @@ public class ShowConnectorsFeature extends AbstractCustomFeature {
 				// // then forward to super-implementation, which checks if
 				// // this EClass is associated with other diagrams
 				// return super.canExecute(context);
-				return true;
+				//return true;
+				return (linkedDiagrams.size() > 0);
 			}
 		}
 		return false;
