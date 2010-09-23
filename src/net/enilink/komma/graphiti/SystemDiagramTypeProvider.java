@@ -30,6 +30,7 @@ import net.enilink.komma.common.notify.NotificationFilter;
 import net.enilink.komma.edit.domain.IEditingDomain;
 import net.enilink.komma.edit.domain.IEditingDomainProvider;
 import net.enilink.komma.edit.ui.editor.KommaEditorSupport;
+import net.enilink.komma.graphiti.model.ModelSetManager;
 import net.enilink.komma.model.IModel;
 import net.enilink.komma.model.IModelSet;
 import net.enilink.komma.core.IReference;
@@ -85,12 +86,12 @@ public class SystemDiagramTypeProvider extends AbstractDiagramTypeProvider
 
 		injector = Guice.createInjector(new SystemDiagramModule(this) {
 			protected IModelSet provideModelSet(
-					IDiagramTypeProvider diagramTypeProvider) {
+					IDiagramTypeProvider diagramTypeProvider, ModelSetManager modelSetManager) {
 				IModelSet sharedModelSet = getSharedModelSet();
 				if (sharedModelSet != null) {
 					return sharedModelSet;
 				}
-				return super.provideModelSet(diagramTypeProvider);
+				return super.provideModelSet(diagramTypeProvider, modelSetManager);
 			}
 
 		});

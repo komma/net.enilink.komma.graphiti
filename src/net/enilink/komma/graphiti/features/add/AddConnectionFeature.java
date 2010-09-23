@@ -57,7 +57,7 @@ public class AddConnectionFeature extends AbstractAddFeature {
 		String label = null;
 		if (addedConnection instanceof IStatement) {
 			label = ModelUtil.getLabel(model.resolve(((IStatement)addedConnection).getPredicate()));
-		} else if (addedConnection instanceof Connection) {
+		} else if (addedConnection instanceof net.enilink.komma.concepts.Connection) {
 			label = ModelUtil.getLabel(model.resolve(((IEntity) addedConnection).getReference()));
 		}
 
@@ -99,5 +99,4 @@ public class AddConnectionFeature extends AbstractAddFeature {
 		// polyline.setStyle(StyleUtil.getStyleForEClass(getDiagram()));
 		return polyline;
 	}
-
 }
