@@ -53,14 +53,14 @@ public class AddNodeFeature extends AbstractAddShapeFeature {
 	@Override
 	public boolean canAdd(IAddContext context) {
 		if (context.getNewObject() instanceof IEntity) {
-			if (context.getTargetContainer() instanceof Diagram) {
+			//if (context.getTargetContainer() instanceof Diagram) {
 				if (!(context.getNewObject() instanceof IClass)) {
 					return getFeatureProvider()
 							.getPictogramElementForBusinessObject(
 									context.getNewObject()) == null;
 				}
 				return true;
-			}
+			//}
 		}
 
 		return false;
