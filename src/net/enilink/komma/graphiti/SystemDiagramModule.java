@@ -27,6 +27,7 @@ import org.osgi.framework.ServiceReference;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
+import com.google.inject.Injector;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
@@ -63,7 +64,6 @@ public class SystemDiagramModule extends AbstractModule {
 		}
 	}
 
-	ModelSetManager modelSetManager;
 	IDiagramTypeProvider typeProvider;
 
 	public static class EditorSupport extends
@@ -101,7 +101,7 @@ public class SystemDiagramModule extends AbstractModule {
 
 	@Override
 	protected void configure() {
-		modelSetManager = new ModelSetManager();
+		bind(ModelSetManager.class).in(Singleton.class);
 
 		bind(IDiagramTypeProvider.class).toInstance(typeProvider);
 		bind(IGraphicsAlgorithmRendererFactory.class).to(
@@ -148,7 +148,9 @@ public class SystemDiagramModule extends AbstractModule {
 
 	@Provides
 	@Singleton
-	protected IModelSet provideModelSet(IDiagramTypeProvider diagramTypeProvider) {
+	protected IModelSet provideModelSet(
+			IDiagramTypeProvider diagramTypeProvider,
+			ModelSetManager modelSetManager) {
 		org.eclipse.emf.common.util.URI uri = diagramTypeProvider.getDiagram()
 				.eResource().getURI();
 
@@ -213,9 +215,9 @@ public class SystemDiagramModule extends AbstractModule {
 
 	@Provides
 	@Singleton
-	protected IFeatureProvider provideFeatureProvider(
-			SystemDiagramFeatureProvider systemFeatureProvider) {
-		return new ConfigurableFeatureProviderWrapper(systemFeatureProvider);
+	protected IFeatureProvider provideFeatureProvider(Injector injector) {
+		return new ConfigurableFeatureProviderWrapper(
+				injector.getInstance(SystemDiagramFeatureProvider.class));
 	}
 
 	@Provides

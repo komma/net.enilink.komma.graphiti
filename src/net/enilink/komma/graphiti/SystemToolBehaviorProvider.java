@@ -31,9 +31,9 @@ public class SystemToolBehaviorProvider extends DefaultToolBehaviorProvider {
 	 * This function is used to add buttons to the button pads of the items
 	 */
 	@Override
-	public IContextButtonPadData getContextButtonPadData(
+	public IContextButtonPadData getContextButtonPad(
 			IPictogramElementContext context) {
-		IContextButtonPadData retVal = super.getContextButtonPadData(context);
+		IContextButtonPadData retVal = super.getContextButtonPad(context);
 		ICustomContext cc = getCustomContext(context);
 		IFeatureProvider fp = getFeatureProvider();
 		ICustomFeature[] features = fp.getCustomFeatures(cc);

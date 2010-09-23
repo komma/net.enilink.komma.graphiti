@@ -5,6 +5,9 @@ import java.util.Collection;
 
 import org.eclipse.core.resources.IProject;
 
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+
 import net.enilink.komma.common.adapter.IAdapterFactory;
 import net.enilink.komma.concepts.IClass;
 import net.enilink.komma.edit.KommaEditPlugin;
@@ -57,6 +60,9 @@ public class ModelSetManager {
 		initializeEditingDomain(modelSet);
 		return modelSet;
 	}
+	
+	@Inject
+	protected Injector injector;
 
 	protected void initializeEditingDomain(IModelSet modelSet) {
 		// Create an adapter factory that yields item providers.
@@ -100,6 +106,10 @@ public class ModelSetManager {
 				return defaultAdapterFactory;
 			}
 		};
+		
+		if (injector != null) {
+			injector.injectMembers(ownedAdapterFactory);
+		}
 
 		// Create the command stack that will notify this editor as commands
 		// are executed.

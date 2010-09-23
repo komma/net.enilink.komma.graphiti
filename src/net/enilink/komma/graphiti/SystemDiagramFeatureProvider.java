@@ -36,6 +36,7 @@ import com.google.inject.Injector;
 
 import net.enilink.vocab.systems.SYSTEMS;
 import net.enilink.komma.concepts.Connection;
+import net.enilink.komma.common.adapter.IAdapterFactory;
 import net.enilink.komma.concepts.IProperty;
 import net.enilink.komma.concepts.IResource;
 import net.enilink.komma.graphiti.features.DeleteFeature;
@@ -139,6 +140,9 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 				.getInstance(CreateConnectionFeature.class) };
 	}
 
+	@Inject
+	IAdapterFactory adapterFactory;
+
 	/**
 	 * This function is called each time a newly created PictogramElement
 	 * (created by a call to one of the add features) shall be added to the
@@ -150,7 +154,13 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 	@Override
 	public IAddFeature getAddFeature(IAddContext context) {
 		Object newObject = context.getNewObject();
-		if (newObject instanceof IEntity && !(newObject instanceof IProperty) && !(newObject instanceof Connection)) {
+		IAddFeature addFeature = (IAddFeature) adapterFactory.adapt(newObject,
+				IAddFeature.class);
+		if (null != addFeature) {
+			return addFeature;
+		}
+		if (newObject instanceof IEntity
+				&& !(newObject instanceof IProperty || newObject instanceof Connection)) {
 			return injector.getInstance(AddNodeFeature.class);
 		}
 		if (newObject instanceof IStatement || newObject instanceof Connection) {
@@ -162,6 +172,12 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 	@Override
 	public ILayoutFeature getLayoutFeature(ILayoutContext context) {
 		PictogramElement pe = context.getPictogramElement();
+		Object theObject = getBusinessObjectForPictogramElement(pe);
+		ILayoutFeature layoutFeature = (ILayoutFeature) adapterFactory.adapt(theObject,
+				ILayoutFeature.class);
+		if (null != layoutFeature) {
+			return layoutFeature;
+		}
 		if (pe instanceof ContainerShape
 				&& (getBusinessObjectForPictogramElement(pe) instanceof IResource)) {
 			return injector.getInstance(LayoutNodeFeature.class);
