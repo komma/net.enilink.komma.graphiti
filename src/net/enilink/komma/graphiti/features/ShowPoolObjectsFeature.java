@@ -18,6 +18,7 @@ import org.eclipse.graphiti.features.context.impl.AddConnectionContext;
 import org.eclipse.graphiti.features.context.impl.AddContext;
 import org.eclipse.graphiti.features.custom.AbstractCustomFeature;
 import org.eclipse.graphiti.mm.algorithms.GraphicsAlgorithm;
+import org.eclipse.graphiti.mm.algorithms.Rectangle;
 import org.eclipse.graphiti.mm.algorithms.RoundedRectangle;
 import org.eclipse.graphiti.mm.pictograms.Anchor;
 import org.eclipse.graphiti.mm.pictograms.ChopboxAnchor;
@@ -83,6 +84,10 @@ public class ShowPoolObjectsFeature extends AbstractCustomFeature {
 	private static int shiftX,shiftY;
 	private static float fXAspect,fYAspect;
 	private static LinkedList<Connection> connectorConns = null;
+	//private static EList<Shape> shapeChildren;
+	//private static EList<GraphicsAlgorithm> gaChildren;
+	//private static ContainerShape storedCS;
+	private static GraphicsAlgorithm storedGA;
 	
 	@Override
 	public boolean canExecute(ICustomContext context){
@@ -124,9 +129,7 @@ public class ShowPoolObjectsFeature extends AbstractCustomFeature {
 		Collection<Diagram> diagrams = getLinkedDiagrams(pe);
 		
 		if(diagrams.size() < 1){
-			// this closes an open pool when its container is target of this execute
-			if(((ContainerShape)pe).getChildren().contains(currOpen))
-				closeCurrentPool();
+			// something goofy must have happened...
 			return;
 		}
 		
@@ -139,8 +142,10 @@ public class ShowPoolObjectsFeature extends AbstractCustomFeature {
 		// close the currently open instance first if appropriate
 		closeCurrentPool();
 		
-		if(((ContainerShape)pe).equals(currOpen))
+		if(pe.equals(currOpen)){
+			currOpen = null;
 			return;// we only close the open instance
+		}
 		
 		currOpen = pe;
 		
@@ -150,24 +155,17 @@ public class ShowPoolObjectsFeature extends AbstractCustomFeature {
 		getDiagram().getConnections().addAll(conns);
 		
 		// create a new shape which will replace the current
-		ContainerShape oldCS,newCS;
+		ContainerShape oldCS;
 		GraphicsAlgorithm oldGA;
 		
 		oldCS = (ContainerShape)pe;
 		oldGA = oldCS.getGraphicsAlgorithm();
 		
-		// new cs has the same container as the old one
-		newCS = peService.createContainerShape(oldCS.getContainer(), true);
-		
 		int width = oldGA.getWidth();
 		int height = oldGA.getHeight();
+		int oldWidth = width;
+		int oldHeight = height;
 		int x = oldGA.getX(),y = oldGA.getY();
-		
-		// reduce old cs size
-		gaService.setLocationAndSize(oldGA, 5, 5, width >> 1, height >> 1);
-		
-		// put old cs into new one
-		oldCS.setContainer(newCS);
 		
 		// we use the shifts to put the leftmost item to the leftmost side of the box, same applies for the topmost one
 		shiftX = Integer.MAX_VALUE;
@@ -198,11 +196,11 @@ public class ShowPoolObjectsFeature extends AbstractCustomFeature {
 			if(currH > maxH)
 				maxH = currH;
 			
-			if((currX + currW) > maxX){
+			if((currX + currW) > (maxX + maxXW)){
 				maxX = currX;
 				maxXW = currW;
 			}
-			if((currY + currH) > maxY){
+			if((currY + currH) > (maxY + maxYH)){
 				maxY = currY;
 				maxYH = currH;
 			}
@@ -226,16 +224,58 @@ public class ShowPoolObjectsFeature extends AbstractCustomFeature {
 			factor = 2;// we always want a minimum factor of one. In fact, this only applies when the subdiagram is empty.
 		width *= factor;
 		height *= factor;
-		//width <<= 1;
-		//height <<= 1;
+
+		// we store a copy of the current graphics algorithm of the item.
+		// this appears to be the easiest way of restoring it when the pool is closed
+		storedGA = EcoreUtil.copy(oldGA);
 		
-		RoundedRectangle rr = gaService.createRoundedRectangle(newCS, 10, 10);
-		gaService.setLocationAndSize(rr, x, y, width, height);
+		// connectors get special handling since we want to connect them to their instances
+		LinkedList<Shape> connectors = new LinkedList<Shape>();
+		
+		for(Shape child: oldCS.getChildren()){
+			Object bo = getBusinessObjectForPictogramElement(child);
+			
+			//float fXRatio,fYRatio;
+			
+			// determine whether we have some active element or just decoration
+			if(bo instanceof IReference){
+				// connectors are handled different since they shall be connected to their instances later
+				if(bo instanceof Interface){
+					connectors.add(child);
+					// this all doesn't work properly...
+					GraphicsAlgorithm childGA = child.getGraphicsAlgorithm();
+					// we move the connector such that it is in the same relative position as before
+					//fXRatio = (float)(childGA.getX() - 5) / (float)(oldWidth - 10 - 10);
+					//fYRatio = (float)(childGA.getY() - 5) / (float)(oldHeight - 30 - 10);
+					// connectors are 10 pixels wide and high, so we need to consider this
+					
+					//childGA.setX((int)Math.ceil(fXRatio * width) + 5);
+					//childGA.setY((int)Math.ceil(fYRatio * (height - 30)) + 5);
+					// make sure connectors keeps aligned to the border
+					// we only need to cover connectors aligned to the right or bottom border
+					if(childGA.getX() == (oldWidth - 15)){
+						childGA.setX(width - 15);
+					}
+					if(childGA.getY() == (oldHeight - 35)){
+						childGA.setY(height - 15);
+					}
+				}
+			}
+			// all other items are considered to be some kind of decorator and are not updated here.
+			// this will hopefully be done by the call to layoutPictogramElement() at the end of this function
+		}
+		
+		// here we create a new graphics algorithm for the shape.
+		// it temporarily replaces the old one until we close the pool
+		Rectangle invisibleRectangle = gaService.createInvisibleRectangle(oldCS);
+		gaService.setLocationAndSize(invisibleRectangle, x, y, width, height + 20);
+		
+		RoundedRectangle rr = gaService.createRoundedRectangle(invisibleRectangle, 10, 10);
 		rr.setBackground(gaService.manageColor(getDiagram(), new ColorConstant(255,255,255)));
 		
 		// since we don't want arbitrarily large boxes, we scale positions to fit into our created box.
-		/*float */fXAspect = (float)(width - 10 - maxXW) / (float)maxX;
-		/*float */fYAspect = (float)(height - 75 - maxYH) / (float)maxY;
+		fXAspect = (float)(width - 10 - maxXW) / (float)maxX;
+		fYAspect = (float)(height - 10 - maxYH) / (float)maxY;
 		
 		// ...and here or no good diagram will result when changes are stored back to the subdiagram.
 		if(0 == nChildren){
@@ -248,32 +288,16 @@ public class ShowPoolObjectsFeature extends AbstractCustomFeature {
 			
 			// position child elements
 			ga.setX((int)((ga.getX() - shiftX) * fXAspect) + 5);
-			ga.setY((int)((ga.getY() - shiftY) * fYAspect) + 70);
+			ga.setY((int)((ga.getY() - shiftY) * fYAspect) + 5);
 		}
 		
 		// add all diagram elements to our new container shape
-		newCS.getChildren().addAll(diq.getChildren());
+		oldCS.getChildren().addAll(diq.getChildren());
 		
 		// we need to add the children to this diagram first for the connection method to work.
 		// otherwise getPictogramElementForBusinessObject() does not work.
-		int currConnY = 5;
-		LinkedList<Shape> connectors = new LinkedList<Shape>();
-		// if the container shows connectors, we also put them into the new shape
-		for(Shape currShape: oldCS.getChildren()){
-			Object bo = getBusinessObjectForPictogramElement(currShape);
-			
-			if(bo instanceof Interface){
-				connectors.add(currShape);
-			}
-		}
-		// this is used to prevent concurrent modification of the children list
-		// of the container which does not work properly.
+		// so now here we create the connections between connectors and the instances which they represent
 		for(Shape currShape: connectors){
-			currShape.setContainer(newCS);
-			GraphicsAlgorithm ga = currShape.getGraphicsAlgorithm();
-			gaService.setLocation(ga, 5, currConnY);
-			currConnY += 5 + ga.getHeight();
-			
 			Interface i = (Interface)getBusinessObjectForPictogramElement(currShape);
 			Object sys = i.getSystemsConnectedFrom();
 			
@@ -291,8 +315,7 @@ public class ShowPoolObjectsFeature extends AbstractCustomFeature {
 			}
 		}
 		
-		peService.createChopboxAnchor(newCS);
-		layoutPictogramElement(newCS);
+		layoutPictogramElement(oldCS);
 	}
 	
 	protected Collection<Diagram> getLinkedDiagrams(PictogramElement pe) {
@@ -365,10 +388,8 @@ public class ShowPoolObjectsFeature extends AbstractCustomFeature {
 			if(!(currOpen instanceof ContainerShape))
 				return;
 			
-			ContainerShape container,cs = (ContainerShape)currOpen;
-			container = cs.getContainer();
-			GraphicsAlgorithm containerGa,csGa;
-			containerGa = container.getGraphicsAlgorithm();
+			ContainerShape cs = (ContainerShape)currOpen;
+			GraphicsAlgorithm csGa;
 			csGa = cs.getGraphicsAlgorithm();
 			
 			Collection<Diagram> diags = getLinkedDiagrams(cs);
@@ -378,36 +399,49 @@ public class ShowPoolObjectsFeature extends AbstractCustomFeature {
 			
 			Diagram diq = diags.toArray(new Diagram[0])[0];
 			
-			// set the shape of our instance back on top
-			cs.setContainer(container.getContainer());
-			
-			int currConnY = 5;
-			LinkedList<Shape> connectors = new LinkedList<Shape>();
-			// put connectors back where they belong
-			for(Shape currShape: container.getChildren()){
+			LinkedList<Shape> items = new LinkedList<Shape>();
+			// determine shapes we have to copy back to the subdiagram
+			for(Shape currShape: cs.getChildren()){
 				Object bo = getBusinessObjectForPictogramElement(currShape);
+				int connMaxX,connMaxY;
+				connMaxX = storedGA.getWidth() - 15;
+				connMaxY = storedGA.getHeight() - 35;
 				
-				if(bo instanceof Interface){
-					connectors.add(currShape);
+				if(bo instanceof IReference){
+					if(!(bo instanceof Interface)){
+						// this seems to be some kind of item which we want to remove from the children list
+						items.add(currShape);
+					}
+					else{
+						// we need to put the connector back to it's original position
+						//float fXRatio,fYRatio;
+						GraphicsAlgorithm childGA = currShape.getGraphicsAlgorithm();
+						/*fXRatio = (float)(childGA.getX() - 5) / (float)(csGa.getWidth() - 10 - 10);
+						fYRatio = (float)(childGA.getY() - 5) / (float)(csGa.getHeight() - 30 - 10);
+						childGA.setX((int)Math.ceil(storedGA.getWidth() * fXRatio) + 5);
+						childGA.setY((int)Math.ceil((storedGA.getHeight() - 30) * fYRatio) + 5);*/
+						// make sure connectors will be inside the allowed range afterwards
+						if(childGA.getX() > connMaxX)
+							childGA.setX(connMaxX);
+						if(childGA.getY() > connMaxY)
+							childGA.setY(connMaxY);
+						// connectors are not removed!
+					}
 				}
 			}
-			// same two-step procedure as above to prevent concurrent modifications
-			for(Shape currShape: connectors){
-				currShape.setContainer(cs);
-				GraphicsAlgorithm ga = currShape.getGraphicsAlgorithm();
-				gaService.setLocation(ga, 5, currConnY);
-				currConnY += 5 + ga.getHeight();
-			}
-			
+			// now we remove everything we guess is some kind of item
+			cs.getChildren().removeAll(items);
+			getDiagram().getConnections().removeAll(connectorConns);
+
 			// here we sync the diagram representing the instance with the contents of the pool
 			// copy the children of the container to the diagram instance
 			diq.getChildren().clear();
-			diq.getChildren().addAll(container.getChildren());
+			diq.getChildren().addAll(items);
 			
 			HashSet<Connection> allConnections = new HashSet<Connection>();
 			
 			// copy connections to the subordered diagram
-			for(Shape c: diq.getChildren()){//container.getChildren()){
+			for(Shape c: diq.getChildren()){
 				for(Anchor a: c.getAnchors()){
 					allConnections.addAll(a.getIncomingConnections());
 					allConnections.addAll(a.getOutgoingConnections());
@@ -415,38 +449,32 @@ public class ShowPoolObjectsFeature extends AbstractCustomFeature {
 				// undo the positioning we did to fit the box
 				GraphicsAlgorithm ga = c.getGraphicsAlgorithm();
 				ga.setX((int)((ga.getX() - 5) / fXAspect) + shiftX);
-				ga.setY((int)((ga.getY() - 70) / fYAspect) + shiftY);
+				ga.setY((int)((ga.getY() - 5) / fYAspect) + shiftY);
 				// the diagram will look like it did before
 			}
 			
 			diq.getConnections().clear();
 			diq.getConnections().addAll(allConnections);
 			
-			Collection<Shape> retain = new LinkedList<Shape>();
-			retain.add(cs);
-			
-			// remove all connections from this diagram
-			getDiagram().getConnections().removeAll(diq.getConnections());
-			//if(!connectorConns.isEmpty())
-			//	getDiagram().getConnections().removeAll(connectorConns);
+			// remove connections to connectors first
 			for(Connection c: connectorConns)
 				peService.deletePictogramElement(c);
 			
 			connectorConns.clear();
 			
-			int x,y,width,height;
-			x = containerGa.getX();
-			y = containerGa.getY();
-			width = csGa.getWidth() << 1;
-			height = csGa.getHeight() << 1;
+			// remove all connections from this diagram
+			getDiagram().getConnections().removeAll(diq.getConnections());
+
+			// the stored graphics algorithm still holds the old position.
+			// if the other one has been moved, it would jump back to there which is not desirable.
+			// so we put it where the other GA is located currently
+			storedGA.setX(csGa.getX());
+			storedGA.setY(csGa.getY());
+			cs.setGraphicsAlgorithm(storedGA);
 			
-			// set container to its old position
-			gaService.setLocationAndSize(csGa, x, y, width, height);
-			
-			// delete the container
-			peService.deletePictogramElement(container);
-			
-			currOpen = null;
+			// using this, we get a neat freshly layouted image, e.g. text labels will have correct layout
+			// it seems to force graphiti to do whatever it also does when resizing a pictogram element
+			layoutPictogramElement(cs);			
 		}
 	}
 
