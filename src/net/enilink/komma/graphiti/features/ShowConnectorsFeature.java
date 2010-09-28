@@ -2,15 +2,11 @@ package net.enilink.komma.graphiti.features;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import org.eclipse.emf.common.util.EList;
-import org.eclipse.emf.common.util.TreeIterator;
-import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.context.ICustomContext;
 import org.eclipse.graphiti.features.custom.AbstractCustomFeature;
@@ -26,10 +22,10 @@ import com.google.inject.Inject;
 
 import net.enilink.komma.graphiti.Styles;
 import net.enilink.komma.graphiti.features.create.IURIFactory;
+import net.enilink.komma.graphiti.service.IDiagramService;
 import net.enilink.komma.graphiti.service.ITypes;
 import net.enilink.komma.model.IModel;
 import net.enilink.komma.core.IReference;
-import net.enilink.komma.core.URI;
 
 public class ShowConnectorsFeature extends AbstractCustomFeature {
 
@@ -52,6 +48,9 @@ public class ShowConnectorsFeature extends AbstractCustomFeature {
 	ITypes types;
 
 	@Inject
+	IDiagramService diagramService;
+
+	@Inject
 	public ShowConnectorsFeature(IFeatureProvider fp) {
 		super(fp);
 	}
@@ -59,7 +58,8 @@ public class ShowConnectorsFeature extends AbstractCustomFeature {
 	@Override
 	public void execute(ICustomContext context) {
 		PictogramElement pe = context.getPictogramElements()[0];
-		Collection<Diagram> diagrams = getLinkedDiagrams(pe, true);
+		Collection<Diagram> diagrams = diagramService.getLinkedDiagrams(pe,
+				true);
 		// Map<>
 		ContainerShape cs;
 		if (pe instanceof ContainerShape) {
@@ -148,7 +148,8 @@ public class ShowConnectorsFeature extends AbstractCustomFeature {
 	@Override
 	public boolean canExecute(ICustomContext context) {
 		PictogramElement[] pes = context.getPictogramElements();
-		Collection<Diagram> linkedDiagrams = getLinkedDiagrams(pes[0], false);
+		Collection<Diagram> linkedDiagrams = diagramService.getLinkedDiagrams(
+				pes[0], false);
 		if (pes != null && pes.length == 1) {
 			Object bo = getBusinessObjectForPictogramElement(pes[0]);
 			if (bo instanceof IReference) {
@@ -167,53 +168,4 @@ public class ShowConnectorsFeature extends AbstractCustomFeature {
 	public String getDescription() {
 		return new String("Creates connectors for internal components");
 	}
-
-	protected Collection<Diagram> getLinkedDiagrams(PictogramElement pe,
-			boolean createOnDemand) {
-		final Collection<Diagram> diagrams = new HashSet<Diagram>();
-
-		final Object[] businessObjectsForPictogramElement = getAllBusinessObjectsForPictogramElement(pe);
-		URI firstUri = null;
-		for (Object bo : businessObjectsForPictogramElement) {
-			if (bo instanceof IReference) {
-				URI uri = ((IReference) bo).getURI();
-				if (uri != null) {
-					firstUri = uri;
-				}
-			}
-		}
-		if (firstUri != null) {
-			String diagramId = "diagram_" + firstUri.fragment();
-
-			EObject linkedDiagram = null;
-			for (TreeIterator<EObject> i = EcoreUtil.getAllProperContents(
-					getDiagram().eResource().getContents(), false); i.hasNext();) {
-				EObject eObject = i.next();
-				if (eObject instanceof Diagram) {
-					if (diagramId.equals(((Diagram) eObject).getName())) {
-						linkedDiagram = eObject;
-						break;
-					}
-				}
-			}
-
-			if (createOnDemand && !(linkedDiagram instanceof Diagram)) {
-				Diagram newDiagram = peService.createDiagram(getDiagram()
-						.getDiagramTypeId(), diagramId, getDiagram()
-						.isSnapToGrid());
-				getDiagram().eResource().getContents().add(newDiagram);
-
-				linkedDiagram = newDiagram;
-			} else {
-				return diagrams;
-			}
-
-			if (!EcoreUtil.equals(getDiagram(), linkedDiagram)) {
-				diagrams.add((Diagram) linkedDiagram);
-			}
-		}
-
-		return diagrams;
-	}
-
 }

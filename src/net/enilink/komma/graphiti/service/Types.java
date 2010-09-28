@@ -18,4 +18,14 @@ public class Types implements ITypes {
 	public void designateInterface(PictogramElement pe) {
 		peService.setPropertyValue(pe, INTERFACE_TAG, "");
 	}
+
+	@Override
+	public boolean isExpanded(PictogramElement pe) {
+		return peService.getProperty(pe, EXPANDED_TAG) != null;
+	}
+
+	@Override
+	public void designateExpanded(PictogramElement pe) {
+		peService.setPropertyValue(pe, EXPANDED_TAG, "");
+	}
 }

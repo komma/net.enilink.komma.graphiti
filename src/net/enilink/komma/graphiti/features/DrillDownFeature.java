@@ -1,11 +1,7 @@
 package net.enilink.komma.graphiti.features;
 
 import java.util.Collection;
-import java.util.HashSet;
 
-import org.eclipse.emf.common.util.TreeIterator;
-import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.transaction.TransactionalEditingDomain;
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.context.ICustomContext;
@@ -31,8 +27,8 @@ import org.eclipse.ui.ide.IDE;
 import com.google.inject.Inject;
 
 import net.enilink.komma.graphiti.SystemDiagramEditor;
+import net.enilink.komma.graphiti.service.IDiagramService;
 import net.enilink.komma.core.IReference;
-import net.enilink.komma.core.URI;
 
 public class DrillDownFeature extends AbstractCustomFeature {
 	private class DiagramLabelProvider extends LabelProvider {
@@ -72,6 +68,9 @@ public class DrillDownFeature extends AbstractCustomFeature {
 	IPeService peService;
 
 	@Inject
+	IDiagramService diagramService;
+
+	@Inject
 	public DrillDownFeature(IFeatureProvider fp) {
 		super(fp);
 	}
@@ -94,7 +93,8 @@ public class DrillDownFeature extends AbstractCustomFeature {
 
 	public void execute(ICustomContext context) {
 		final PictogramElement pe = context.getPictogramElements()[0];
-		final Collection<Diagram> possibleDiagramsList = getLinkedDiagrams(pe);
+		final Collection<Diagram> possibleDiagramsList = diagramService
+				.getLinkedDiagrams(pe, true);
 
 		if (!possibleDiagramsList.isEmpty()) {
 			final Diagram[] possibleDiagrams = possibleDiagramsList
@@ -150,51 +150,6 @@ public class DrillDownFeature extends AbstractCustomFeature {
 	@Override
 	public String getDescription() {
 		return "Open the diagram associated with this node"; //$NON-NLS-1$
-	}
-
-	protected Collection<Diagram> getLinkedDiagrams(PictogramElement pe) {
-		final Collection<Diagram> diagrams = new HashSet<Diagram>();
-
-		final Object[] businessObjectsForPictogramElement = getAllBusinessObjectsForPictogramElement(pe);
-		URI firstUri = null;
-		for (Object bo : businessObjectsForPictogramElement) {
-			if (bo instanceof IReference) {
-				URI uri = ((IReference) bo).getURI();
-				if (uri != null) {
-					firstUri = uri;
-				}
-			}
-		}
-		if (firstUri != null) {
-			String diagramId = "diagram_" + firstUri.fragment();
-
-			EObject linkedDiagram = null;
-			for (TreeIterator<EObject> i = EcoreUtil.getAllProperContents(
-					getDiagram().eResource().getContents(), false); i.hasNext();) {
-				EObject eObject = i.next();
-				if (eObject instanceof Diagram) {
-					if (diagramId.equals(((Diagram) eObject).getName())) {
-						linkedDiagram = eObject;
-						break;
-					}
-				}
-			}
-
-			if (!(linkedDiagram instanceof Diagram)) {
-				Diagram newDiagram = peService.createDiagram(getDiagram()
-						.getDiagramTypeId(), diagramId, getDiagram()
-						.isSnapToGrid());
-				getDiagram().eResource().getContents().add(newDiagram);
-
-				linkedDiagram = newDiagram;
-			}
-
-			if (!EcoreUtil.equals(getDiagram(), linkedDiagram)) {
-				diagrams.add((Diagram) linkedDiagram);
-			}
-		}
-
-		return diagrams;
 	}
 
 	@Override

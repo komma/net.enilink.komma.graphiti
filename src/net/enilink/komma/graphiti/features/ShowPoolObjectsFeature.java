@@ -5,8 +5,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 
 import org.eclipse.emf.common.util.EList;
-import org.eclipse.emf.common.util.TreeIterator;
-import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.context.ICustomContext;
@@ -29,10 +27,9 @@ import com.google.inject.Inject;
 import net.enilink.vocab.systems.Station;
 import net.enilink.komma.graphiti.Styles;
 import net.enilink.komma.graphiti.features.create.IURIFactory;
+import net.enilink.komma.graphiti.service.IDiagramService;
 import net.enilink.komma.graphiti.service.ITypes;
 import net.enilink.komma.model.IModel;
-import net.enilink.komma.core.IReference;
-import net.enilink.komma.core.URI;
 
 public class ShowPoolObjectsFeature extends AbstractCustomFeature {
 	@Inject
@@ -52,6 +49,9 @@ public class ShowPoolObjectsFeature extends AbstractCustomFeature {
 
 	@Inject
 	ITypes types;
+
+	@Inject
+	IDiagramService diagramService;
 
 	@Inject
 	public ShowPoolObjectsFeature(IFeatureProvider fp) {
@@ -119,7 +119,8 @@ public class ShowPoolObjectsFeature extends AbstractCustomFeature {
 		if (!(pe instanceof ContainerShape))
 			return;
 
-		Collection<Diagram> diagrams = getLinkedDiagrams(pe);
+		Collection<Diagram> diagrams = diagramService.getLinkedDiagrams(pe,
+				false);
 
 		if (diagrams.size() < 1) {
 			// something goofy must have happened...
@@ -333,51 +334,6 @@ public class ShowPoolObjectsFeature extends AbstractCustomFeature {
 		layoutPictogramElement(oldCS);
 	}
 
-	protected Collection<Diagram> getLinkedDiagrams(PictogramElement pe) {
-		final Collection<Diagram> diagrams = new HashSet<Diagram>();
-
-		final Object[] businessObjectsForPictogramElement = getAllBusinessObjectsForPictogramElement(pe);
-		URI firstUri = null;
-		for (Object bo : businessObjectsForPictogramElement) {
-			if (bo instanceof IReference) {
-				URI uri = ((IReference) bo).getURI();
-				if (uri != null) {
-					firstUri = uri;
-				}
-			}
-		}
-		if (firstUri != null) {
-			String diagramId = "diagram_" + firstUri.fragment();
-
-			EObject linkedDiagram = null;
-			for (TreeIterator<EObject> i = EcoreUtil.getAllProperContents(
-					getDiagram().eResource().getContents(), false); i.hasNext();) {
-				EObject eObject = i.next();
-				if (eObject instanceof Diagram) {
-					if (diagramId.equals(((Diagram) eObject).getName())) {
-						linkedDiagram = eObject;
-						break;
-					}
-				}
-			}
-
-			if (!(linkedDiagram instanceof Diagram)) {
-				Diagram newDiagram = peService.createDiagram(getDiagram()
-						.getDiagramTypeId(), diagramId, getDiagram()
-						.isSnapToGrid());
-				getDiagram().eResource().getContents().add(newDiagram);
-
-				linkedDiagram = newDiagram;
-			}
-
-			if (!EcoreUtil.equals(getDiagram(), linkedDiagram)) {
-				diagrams.add((Diagram) linkedDiagram);
-			}
-		}
-
-		return diagrams;
-	}
-
 	protected void closeCurrentPool() {
 		if (currOpen != null) {
 			if (!(currOpen instanceof ContainerShape))
@@ -387,7 +343,8 @@ public class ShowPoolObjectsFeature extends AbstractCustomFeature {
 			GraphicsAlgorithm csGa;
 			csGa = cs.getGraphicsAlgorithm();
 
-			Collection<Diagram> diags = getLinkedDiagrams(cs);
+			Collection<Diagram> diags = diagramService.getLinkedDiagrams(cs,
+					false);
 
 			if (diags.size() < 1)
 				return;
