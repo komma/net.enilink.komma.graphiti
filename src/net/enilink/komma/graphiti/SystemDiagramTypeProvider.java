@@ -86,12 +86,14 @@ public class SystemDiagramTypeProvider extends AbstractDiagramTypeProvider
 
 		injector = Guice.createInjector(new SystemDiagramModule(this) {
 			protected IModelSet provideModelSet(
-					IDiagramTypeProvider diagramTypeProvider, ModelSetManager modelSetManager) {
+					IDiagramTypeProvider diagramTypeProvider,
+					ModelSetManager modelSetManager) {
 				IModelSet sharedModelSet = getSharedModelSet();
 				if (sharedModelSet != null) {
 					return sharedModelSet;
 				}
-				return super.provideModelSet(diagramTypeProvider, modelSetManager);
+				return super.provideModelSet(diagramTypeProvider,
+						modelSetManager);
 			}
 
 		});

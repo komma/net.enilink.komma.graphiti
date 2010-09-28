@@ -22,7 +22,7 @@ public class Styles {
 
 	@Inject
 	IGaService gaService;
-	
+
 	public Style getStyleForToggle(Diagram diagram) {
 		final String styleId = "TOGGLE"; //$NON-NLS-1$
 
@@ -30,8 +30,10 @@ public class Styles {
 
 		if (style == null) { // style not found - create new style
 			style = gaService.createStyle(diagram, styleId);
-			style.setBackground(gaService.manageColor(diagram, new ColorConstant(255, 255, 255)));
-			style.setForeground(gaService.manageColor(diagram, new ColorConstant(0, 150, 150)));
+			style.setBackground(gaService.manageColor(diagram,
+					new ColorConstant(255, 255, 255)));
+			style.setForeground(gaService.manageColor(diagram,
+					new ColorConstant(0, 150, 150)));
 			style.setLineWidth(1);
 		}
 		return style;

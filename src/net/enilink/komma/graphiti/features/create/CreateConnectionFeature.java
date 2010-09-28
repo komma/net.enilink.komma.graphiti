@@ -1,11 +1,5 @@
 package net.enilink.komma.graphiti.features.create;
 
-import java.util.Collection;
-import java.util.HashSet;
-
-import org.eclipse.emf.common.util.TreeIterator;
-import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.util.EcoreUtil;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,12 +8,7 @@ import org.eclipse.graphiti.features.context.ICreateConnectionContext;
 import org.eclipse.graphiti.features.context.impl.AddConnectionContext;
 import org.eclipse.graphiti.features.impl.AbstractCreateConnectionFeature;
 import org.eclipse.graphiti.mm.pictograms.Anchor;
-import org.eclipse.graphiti.mm.pictograms.AnchorContainer;
 import org.eclipse.graphiti.mm.pictograms.Connection;
-import org.eclipse.graphiti.mm.pictograms.ContainerShape;
-import org.eclipse.graphiti.mm.pictograms.Diagram;
-import org.eclipse.graphiti.mm.pictograms.PictogramElement;
-import org.eclipse.graphiti.mm.pictograms.Shape;
 import org.eclipse.graphiti.services.IPeService;
 import org.eclipse.jface.window.Window;
 import org.eclipse.ui.PlatformUI;
@@ -27,21 +16,18 @@ import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 
 import com.google.inject.Inject;
 
-import net.enilink.vocab.systems.Interface;
-import net.enilink.vocab.systems.Station;
 import net.enilink.commons.iterator.IExtendedIterator;
 import net.enilink.komma.common.adapter.IAdapterFactory;
 import net.enilink.komma.concepts.IClass;
 import net.enilink.komma.concepts.IProperty;
 import net.enilink.komma.edit.ui.provider.AdapterFactoryLabelProvider;
-import net.enilink.komma.graphiti.IDiagramEditorExt;
 import net.enilink.komma.graphiti.service.IDiagramService;
+import net.enilink.komma.graphiti.service.ITypes;
 import net.enilink.komma.model.IModel;
 import net.enilink.komma.core.IEntity;
 import net.enilink.komma.core.IReference;
 import net.enilink.komma.core.IStatement;
 import net.enilink.komma.core.Statement;
-import net.enilink.komma.core.URI;
 import net.enilink.komma.util.ISparqlConstants;
 
 public class CreateConnectionFeature extends AbstractCreateConnectionFeature {
@@ -143,7 +129,7 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature {
 
 	@Inject
 	IURIFactory uriFactory;
-	
+
 	@Inject
 	IAdapterFactory adapterFactory;
 
@@ -151,13 +137,13 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature {
 	IModel model;
 
 	@Inject
-	IDiagramEditorExt editor;
+	IDiagramService diagramService;
 
 	@Inject
-	IDiagramService diagramService;
-	
-	@Inject
 	IPeService peService;
+
+	@Inject
+	ITypes types;
 
 	@Inject
 	public CreateConnectionFeature(IFeatureProvider fp) {
@@ -166,83 +152,15 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature {
 	}
 
 	public boolean canCreate(ICreateConnectionContext context) {
-		// return true if both anchors belong to a EClass
-		// and those Systems are not identical
 		IEntity source = getEntity(context.getSourceAnchor());
 		IEntity target = getEntity(context.getTargetAnchor());
-		
-		// these are used to allow connections only between items in the same container, e.g.
-		// connecting an instance contained in another item to a top level item is forbidden
-		ContainerShape sContainer = null,tContainer = null;
-		PictogramElement sPE = context.getSourcePictogramElement(),tPE = context.getTargetPictogramElement();
-		
-		if(sPE != null){
-			Object bo = getBusinessObjectForPictogramElement(sPE);
-			
-			if(sPE instanceof Shape){
-				sContainer = ((Shape)sPE).getContainer();
-				
-				// this is needed to handle connectors properly
-				if(bo instanceof Interface)
-					sContainer = sContainer.getContainer();
-			}
-		}
 
-		if(tPE != null){
-			Object bo = getBusinessObjectForPictogramElement(tPE);
-			
-			if(tPE instanceof Shape){
-				tContainer = ((Shape)tPE).getContainer();
-				
-				if(bo instanceof Interface)
-					tContainer = tContainer.getContainer();
-			}
-		}
-
-		// to prevent null pointer exceptions
-		if((null == sContainer) || (null == tContainer))
-			return false;
-		
-		if (source != null && target != null && !source.equals(target) && sContainer.equals(tContainer)) {
-			// check whether target is composed of other components
-			Collection<Diagram> tDiagrams = getLinkedDiagrams(context.getTargetPictogramElement());
-			boolean retVal = true;
-			
-			if(!tDiagrams.isEmpty()){
-				Diagram diq = (tDiagrams.toArray(new Diagram[0]))[0];
-
-				retVal = (diq.getChildren().size() == 0);
-			}
-				
-			return retVal;
-		}
-		return false;
+		return source != null && target != null && !source.equals(target);
 	}
 
 	public boolean canStartConnection(ICreateConnectionContext context) {
-		// return true if start anchor belongs to a EClass
 		IEntity source = getEntity(context.getSourceAnchor());
-		if (source != null) {
-			boolean retVal = true;
-			
-			Collection<Diagram> diagrams = getLinkedDiagrams(context.getSourcePictogramElement());
-			
-			if(!diagrams.isEmpty()){
-				Diagram diq = (diagrams.toArray(new Diagram[0]))[0];
-			
-				retVal = (diq.getChildren().size() == 0);
-			}
-						
-			return retVal;
-		}
-		/*else{
-			Object bo = getBusinessObjectForPictogramElement(context.getSourcePictogramElement());
-			if(bo instanceof Interface){
-				getEntity(context.getSourceAnchor());
-				return true;
-			}
-		}*/
-		return false;
+		return source != null;
 	}
 
 	class ConnectionContainer {
@@ -261,15 +179,15 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature {
 			return sourceProp.getURI() + " -> " + concept.getURI() + " -> "
 					+ targetProp.getURI();
 		}
-		
+
 		public IClass getConcept() {
 			return concept;
 		}
-		
+
 		public IProperty getSourceProperty() {
 			return sourceProp;
 		}
-		
+
 		public IProperty getTargetProperty() {
 			return targetProp;
 		}
@@ -283,7 +201,6 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature {
 		IEntity target = getEntity(context.getTargetAnchor());
 
 		if (source != null && target != null) {
-
 			// query for connection objects between source and target
 
 			IExtendedIterator<?> connClassAndProps = source.getKommaManager()
@@ -313,20 +230,25 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature {
 									.getActiveWorkbenchWindow().getShell(),
 							new AdapterFactoryLabelProvider(adapterFactory));
 					selectionDialog.setHelpAvailable(false);
-					selectionDialog.setElements(connections.toArray(new ConnectionContainer[0]));
+					selectionDialog.setElements(connections
+							.toArray(new ConnectionContainer[0]));
 					if (selectionDialog.open() == Window.OK) {
-						selection = (ConnectionContainer) selectionDialog.getFirstResult();
+						selection = (ConnectionContainer) selectionDialog
+								.getFirstResult();
 					}
 				}
 
 				if (selection == null) {
 					return null;
 				}
-				
+
 				// create new business object
-				IEntity connObject = model.getManager().createNamed(uriFactory.createURI(), selection.getConcept());
-				IStatement stmtLeft = createStatement(source, selection.getSourceProperty(), connObject);
-				IStatement stmtRight = createStatement(connObject, selection.getTargetProperty(), target);
+				IEntity connObject = model.getManager().createNamed(
+						uriFactory.createURI(), selection.getConcept());
+				IStatement stmtLeft = createStatement(source,
+						selection.getSourceProperty(), connObject);
+				IStatement stmtRight = createStatement(connObject,
+						selection.getTargetProperty(), target);
 
 				// add connection for business object
 				AddConnectionContext addContext = new AddConnectionContext(
@@ -334,7 +256,7 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature {
 				addContext.setNewObject(connObject);
 				newConnection = (Connection) getFeatureProvider()
 						.addIfPossible(addContext);
-				
+
 			} else {
 				// plain
 				IProperty[] properties = source.getKommaManager()
@@ -387,7 +309,7 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature {
 	 */
 	private IEntity getEntity(Anchor anchor) {
 		if (anchor != null) {
-			Object obj = diagramService.getRootBusinessObject(anchor
+			Object obj = diagramService.getFirstBusinessObject(anchor
 					.getParent());
 			if (obj instanceof IEntity) {
 				return (IEntity) obj;
@@ -405,59 +327,4 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature {
 		model.getManager().add(stmt);
 		return stmt;
 	}
-	
-	protected Collection<Diagram> getLinkedDiagrams(PictogramElement pe) {
-		final Collection<Diagram> diagrams = new HashSet<Diagram>();
-		
-		// to get rid of some exceptions.
-		if(pe instanceof Shape){
-			/*Anchor ac = (Anchor)pe;
-			
-			if(ac.getParent() != getDiagram())*/
-			if(((Shape)pe).getContainer() != getDiagram())
-				return diagrams;
-		}
-
-		final Object[] businessObjectsForPictogramElement = getAllBusinessObjectsForPictogramElement(pe);
-		URI firstUri = null;
-		for (Object bo : businessObjectsForPictogramElement) {
-			if (bo instanceof IReference) {
-				URI uri = ((IReference) bo).getURI();
-				if (uri != null) {
-					firstUri = uri;
-				}
-			}
-		}
-		if (firstUri != null) {
-			String diagramId = "diagram_" + firstUri.fragment();
-
-			EObject linkedDiagram = null;
-			for (TreeIterator<EObject> i = EcoreUtil.getAllProperContents(
-					getDiagram().eResource().getContents(), false); i.hasNext();) {
-				EObject eObject = i.next();
-				if (eObject instanceof Diagram) {
-					if (diagramId.equals(((Diagram) eObject).getName())) {
-						linkedDiagram = eObject;
-						break;
-					}
-				}
-			}
-
-			if (!(linkedDiagram instanceof Diagram)) {
-				Diagram newDiagram = peService.createDiagram(getDiagram()
-						.getDiagramTypeId(), diagramId, getDiagram()
-						.isSnapToGrid());
-				getDiagram().eResource().getContents().add(newDiagram);
-
-				linkedDiagram = newDiagram;
-			}
-
-			if (!EcoreUtil.equals(getDiagram(), linkedDiagram)) {
-				diagrams.add((Diagram) linkedDiagram);
-			}
-		}
-
-		return diagrams;
-	}
-
 }

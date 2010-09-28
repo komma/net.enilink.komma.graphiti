@@ -24,11 +24,9 @@ import org.eclipse.graphiti.services.IPeService;
 
 import com.google.inject.Inject;
 
-import net.enilink.vocab.systems.Interface;
-import net.enilink.vocab.systems.SYSTEMS;
-import net.enilink.vocab.systems.TestConnector;
 import net.enilink.komma.graphiti.Styles;
 import net.enilink.komma.graphiti.features.create.IURIFactory;
+import net.enilink.komma.graphiti.service.ITypes;
 import net.enilink.komma.model.IModel;
 import net.enilink.komma.core.IReference;
 import net.enilink.komma.core.URI;
@@ -37,19 +35,22 @@ public class ShowConnectorsFeature extends AbstractCustomFeature {
 
 	@Inject
 	IPeService peService;
-	
+
 	@Inject
 	IGaService gaService;
-	
+
 	@Inject
 	Styles styles;
-	
+
 	@Inject
 	IModel model;
-	
+
 	@Inject
 	IURIFactory uriFactory;
-	
+
+	@Inject
+	ITypes types;
+
 	@Inject
 	public ShowConnectorsFeature(IFeatureProvider fp) {
 		super(fp);
@@ -58,132 +59,117 @@ public class ShowConnectorsFeature extends AbstractCustomFeature {
 	@Override
 	public void execute(ICustomContext context) {
 		PictogramElement pe = context.getPictogramElements()[0];
-		Collection<Diagram> diagrams = getLinkedDiagrams(pe);
-		//Map<>
+		Collection<Diagram> diagrams = getLinkedDiagrams(pe, true);
+		// Map<>
 		ContainerShape cs;
-		if(pe instanceof ContainerShape){
-			cs = (ContainerShape)pe;
-		}
-		else
+		if (pe instanceof ContainerShape) {
+			cs = (ContainerShape) pe;
+		} else
 			return;
-		
+
 		EList<Shape> csChildren = cs.getChildren();
-		List<Shape> connectorShapes = new LinkedList<Shape>();
-		Map<IReference,Shape> currentConnectors = new HashMap<IReference,Shape>();
-		
+		Map<IReference, Shape> currentConnectors = new HashMap<IReference, Shape>();
+
 		// first we determine all connectors we already have
-		for(Shape s: csChildren){
-			Object bo = getBusinessObjectForPictogramElement(s);
-			
-			if(bo instanceof Interface){
-				connectorShapes.add(s);
-				currentConnectors.put((IReference)((Interface)bo).getSystemsConnectedFrom(), s);
+		for (Shape s : csChildren) {
+			if (types.isInterface(s)) {
+				currentConnectors
+						.put((IReference) getBusinessObjectForPictogramElement(s),
+								s);
 			}
 		}
 
-		/*EList<Shape> children = null;
-		
-		if(pe instanceof ContainerShape){
-			children = ((ContainerShape) pe).getChildren();
-		}*/
-		
-		// first, we need all model elements which are contained in the subordered diagram
-		if(diagrams.size() < 1)
+		/*
+		 * EList<Shape> children = null;
+		 * 
+		 * if(pe instanceof ContainerShape){ children = ((ContainerShape)
+		 * pe).getChildren(); }
+		 */
+
+		// first, we need all model elements which are contained in the
+		// subordered diagram
+		if (diagrams.size() < 1)
 			return;// there is no subordered diagram.
-		
+
 		// take the first diagram for testing first
 		Diagram diq = diagrams.toArray(new Diagram[0])[0];
-		
-		//int refCnt = 0;
-		
-		/*Object o = getBusinessObjectForPictogramElement(pe);
-		
-		if(!(o instanceof IObject))
-			return;// doesn't work...
-		
-		IObject bobject = (IObject)o;
-		Set<IObject> containedObjects = bobject.getContents();*/
-		
+
 		List<Shape> toLayout = new LinkedList<Shape>();
-		
+
 		// we want all direct children's business objects
-		for(Shape s: diq.getChildren()){
+		for (Shape s : diq.getChildren()) {
 			Object bo = getBusinessObjectForPictogramElement(s);
-			
-			if(bo instanceof IReference){
+
+			if (bo instanceof IReference) {
 				// simply count first...
-				//refCnt++;
-				//PictogramElement boPe = getFeatureProvider().getPictogramElementForBusinessObject(bo);
-				Shape connShape = currentConnectors.get(bo);
-				
-				if(connShape == null){//boPe == null){
-					// we currently have no connector for this item, so we create one
-					Shape newShape = peService.createShape(cs,true);
-					
-					Ellipse newElli = gaService.createEllipse(newShape);
+				// refCnt++;
+				// PictogramElement boPe =
+				// getFeatureProvider().getPictogramElementForBusinessObject(bo);
+				Shape connShape = currentConnectors.remove(bo);
+				if (connShape == null) {// boPe == null){
+					// we currently have no connector for this item, so we
+					// create one
+					Shape connectorShape = peService.createShape(cs, true);
+					types.designateInterface(connectorShape);
+
+					Ellipse newElli = gaService.createEllipse(connectorShape);
 					newElli.setStyle(styles.getStyleForToggle(getDiagram()));
-					
-					TestConnector connector = (TestConnector)model.getManager().createNamed(uriFactory.createURI(), SYSTEMS.TYPE_TESTCONNECTOR);
-					connector.setSystemsConnectedFrom(bo);
-					peService.createChopboxAnchor(newShape);
-					
+
+					peService.createChopboxAnchor(connectorShape);
+
 					// link the newly created shape with it's bo
-					link(newShape,connector);
-					//boPe = newShape;
-					connShape = newShape;
+					link(connectorShape, bo);
+					// boPe = newShape;
+					connShape = connectorShape;
 				}
-				else
-					connectorShapes.remove(connShape);
-				
-				toLayout.add((Shape)connShape);//boPe);
+
+				toLayout.add((Shape) connShape);
 			}
 		}
-		
-		// everything that remains in the list connectorShapes does not have an assigned instance in the
+
+		// everything that remains in the list connectorShapes does not have an
+		// assigned instance in the
 		// referenced diagram any more. Delete it.
-		for(Shape s: connectorShapes){
+		for (Shape s : currentConnectors.values()) {
 			peService.deletePictogramElement(s);
 		}
-		
+
 		// now we got all shapes together and need to layout them
 		int currY = 5;
-		
-		for(Shape s: toLayout){
-			gaService.setLocationAndSize(s.getGraphicsAlgorithm(), 5, currY, 10, 10);
+
+		for (Shape s : toLayout) {
+			gaService.setLocationAndSize(s.getGraphicsAlgorithm(), 5, currY,
+					10, 10);
 			currY += 15;
 		}
-		//System.out.print(refCnt + " subordered model elements were found\n");
+		// System.out.print(refCnt + " subordered model elements were found\n");
 	}
-	
+
 	@Override
-	public boolean canExecute(ICustomContext context){
+	public boolean canExecute(ICustomContext context) {
 		PictogramElement[] pes = context.getPictogramElements();
-		Collection<Diagram> linkedDiagrams = getLinkedDiagrams(pes[0]);
-		// first check, if one EClass is selected
+		Collection<Diagram> linkedDiagrams = getLinkedDiagrams(pes[0], false);
 		if (pes != null && pes.length == 1) {
 			Object bo = getBusinessObjectForPictogramElement(pes[0]);
 			if (bo instanceof IReference) {
-				// // then forward to super-implementation, which checks if
-				// // this EClass is associated with other diagrams
-				// return super.canExecute(context);
-				//return true;
-				return (linkedDiagrams.size() > 0);
+				return !linkedDiagrams.isEmpty();
 			}
 		}
 		return false;
 	}
-	
+
 	@Override
-	public String getName(){
+	public String getName() {
 		return new String("Show connectors");
 	}
-	
+
 	@Override
-	public String getDescription(){
+	public String getDescription() {
 		return new String("Creates connectors for internal components");
 	}
-	
-	protected Collection<Diagram> getLinkedDiagrams(PictogramElement pe) {
+
+	protected Collection<Diagram> getLinkedDiagrams(PictogramElement pe,
+			boolean createOnDemand) {
 		final Collection<Diagram> diagrams = new HashSet<Diagram>();
 
 		final Object[] businessObjectsForPictogramElement = getAllBusinessObjectsForPictogramElement(pe);
@@ -211,13 +197,15 @@ public class ShowConnectorsFeature extends AbstractCustomFeature {
 				}
 			}
 
-			if (!(linkedDiagram instanceof Diagram)) {
+			if (createOnDemand && !(linkedDiagram instanceof Diagram)) {
 				Diagram newDiagram = peService.createDiagram(getDiagram()
 						.getDiagramTypeId(), diagramId, getDiagram()
 						.isSnapToGrid());
 				getDiagram().eResource().getContents().add(newDiagram);
 
 				linkedDiagram = newDiagram;
+			} else {
+				return diagrams;
 			}
 
 			if (!EcoreUtil.equals(getDiagram(), linkedDiagram)) {

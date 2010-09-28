@@ -41,7 +41,7 @@ public class AddConnectionFeature extends AbstractAddFeature {
 				&& context.getNewObject() instanceof IStatement) {
 			return true;
 		}
-		
+
 		if (context instanceof IAddConnectionContext
 				&& context.getNewObject() instanceof net.enilink.komma.concepts.Connection) {
 			return true;
@@ -56,9 +56,11 @@ public class AddConnectionFeature extends AbstractAddFeature {
 		Object addedConnection = context.getNewObject();
 		String label = null;
 		if (addedConnection instanceof IStatement) {
-			label = ModelUtil.getLabel(model.resolve(((IStatement)addedConnection).getPredicate()));
+			label = ModelUtil.getLabel(model
+					.resolve(((IStatement) addedConnection).getPredicate()));
 		} else if (addedConnection instanceof net.enilink.komma.concepts.Connection) {
-			label = ModelUtil.getLabel(model.resolve(((IEntity) addedConnection).getReference()));
+			label = ModelUtil.getLabel(model
+					.resolve(((IEntity) addedConnection).getReference()));
 		}
 
 		// CONNECTION WITH POLYLINE
@@ -92,7 +94,7 @@ public class AddConnectionFeature extends AbstractAddFeature {
 
 		return connection;
 	}
-	
+
 	private Polyline createArrow(GraphicsAlgorithmContainer gaContainer) {
 		Polyline polyline = gaService.createPolyline(gaContainer, new int[] {
 				-15, 10, 0, 0, -15, -10 });

@@ -100,7 +100,7 @@ public class UpdateNodeFeature extends AbstractUpdateFeature {
 
 							text = newText;
 						}
-						
+
 						text.setHorizontalAlignment(Orientation.ALIGNMENT_CENTER);
 						text.setVerticalAlignment(Orientation.ALIGNMENT_TOP);
 						text.setValue(businessName);

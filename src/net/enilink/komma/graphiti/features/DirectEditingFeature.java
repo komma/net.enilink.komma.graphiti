@@ -56,7 +56,7 @@ public class DirectEditingFeature extends AbstractDirectEditingFeature {
 		// set the item's name to the new value
 		getResource(pe).setRdfsLabel(value);
 
-		updatePictogramElement(diagramService.getRootElement(pe));
+		updatePictogramElement(diagramService.getRootOrFirstElementWithBO(pe));
 	}
 
 	/**
@@ -76,7 +76,7 @@ public class DirectEditingFeature extends AbstractDirectEditingFeature {
 
 	IResource getResource(PictogramElement pe) {
 		if (pe.getGraphicsAlgorithm() instanceof AbstractText) {
-			final Object bo = diagramService.getRootBusinessObject(pe);
+			final Object bo = diagramService.getFirstBusinessObject(pe);
 
 			if (bo instanceof IResource) {
 				return (IResource) bo;

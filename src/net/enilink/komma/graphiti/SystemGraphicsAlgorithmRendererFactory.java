@@ -51,7 +51,7 @@ public class SystemGraphicsAlgorithmRendererFactory implements
 	private NodeFigure createNodeFigure(GraphicsAlgorithm ga) {
 		URL url = null;
 
-		Object bo = diagramService.getRootBusinessObject(ga);
+		Object bo = diagramService.getFirstBusinessObject(ga);
 		if (bo instanceof IResource) {
 			Set<Object> seen = new HashSet<Object>();
 			Queue<IClass> queue = new LinkedList<IClass>(((IResource) bo)

@@ -47,6 +47,8 @@ import net.enilink.komma.graphiti.features.create.IURIFactory;
 import net.enilink.komma.graphiti.model.ModelSetManager;
 import net.enilink.komma.graphiti.service.DiagramService;
 import net.enilink.komma.graphiti.service.IDiagramService;
+import net.enilink.komma.graphiti.service.ITypes;
+import net.enilink.komma.graphiti.service.Types;
 import net.enilink.komma.model.IModel;
 import net.enilink.komma.model.IModelSet;
 import net.enilink.komma.core.URI;
@@ -123,6 +125,8 @@ public class SystemDiagramModule extends AbstractModule {
 		}).to(EditorSupport.class);
 		bind(IViewerMenuSupport.class).to(EditorSupport.class);
 		bind(IDiagramService.class).to(DiagramService.class);
+
+		bind(ITypes.class).to(Types.class);
 
 		// Graphiti services
 		bind(IGaService.class).toInstance(Graphiti.getGaService());

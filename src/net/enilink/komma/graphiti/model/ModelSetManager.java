@@ -40,6 +40,7 @@ public class ModelSetManager {
 				URIImpl.createURI(MODELS.NAMESPACE +
 				// "MemoryModelSet" //
 						"OwlimModelSet" //
+						// "AGModelSet" //
 				), URIImpl.createURI(MODELS.NAMESPACE + "ProjectModelSet") //
 		).createModelSet();
 
@@ -51,7 +52,7 @@ public class ModelSetManager {
 				.getBundleMetaInfLocations("net.enilink.vocab.systems")) {
 			modelSet.getModule().addLibrary(url);
 		}
-		
+
 		for (URL url : KommaUtil
 				.getBundleMetaInfLocations("net.enilink.modeling.bpmn2")) {
 			modelSet.getModule().addLibrary(url);
@@ -60,7 +61,7 @@ public class ModelSetManager {
 		initializeEditingDomain(modelSet);
 		return modelSet;
 	}
-	
+
 	@Inject
 	protected Injector injector;
 
@@ -106,7 +107,7 @@ public class ModelSetManager {
 				return defaultAdapterFactory;
 			}
 		};
-		
+
 		if (injector != null) {
 			injector.injectMembers(ownedAdapterFactory);
 		}
