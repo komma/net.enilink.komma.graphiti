@@ -33,6 +33,7 @@ import com.google.inject.Inject;
 
 import net.enilink.komma.concepts.IResource;
 import net.enilink.komma.graphiti.SystemGraphicsAlgorithmRendererFactory;
+import net.enilink.komma.graphiti.service.ITypes;
 
 /**
  * The Class LayoutPoolFeature.
@@ -46,6 +47,9 @@ public class LayoutNodeFeature extends AbstractLayoutFeature {
 
 	@Inject
 	IGaService gaService;
+
+	@Inject
+	ITypes types;
 
 	@Inject
 	public LayoutNodeFeature(IFeatureProvider fp) {
@@ -130,7 +134,10 @@ public class LayoutNodeFeature extends AbstractLayoutFeature {
 
 		for (Shape shape : containerShape.getChildren()) {
 			GraphicsAlgorithm graphicsAlgorithm = shape.getGraphicsAlgorithm();
-			if (graphicsAlgorithm instanceof AbstractText) {
+			if (types.isInterface(shape)) {
+				// ensure that connectors are placed at object borders
+				
+			} else if (graphicsAlgorithm instanceof AbstractText) {
 				IDimension size = gaService.calculateSize(graphicsAlgorithm);
 				if (containerWidth != size.getWidth()) {
 					gaService.setWidth(graphicsAlgorithm, containerWidth);

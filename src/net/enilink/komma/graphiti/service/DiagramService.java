@@ -83,15 +83,17 @@ public class DiagramService implements IDiagramService {
 				}
 			}
 
-			if (createOnDemand && !(linkedDiagram instanceof Diagram)) {
-				Diagram newDiagram = peService.createDiagram(
-						currentDiagram.getDiagramTypeId(), diagramId,
-						currentDiagram.isSnapToGrid());
-				currentDiagram.eResource().getContents().add(newDiagram);
+			if (!(linkedDiagram instanceof Diagram)) {
+				if (createOnDemand) {
+					Diagram newDiagram = peService.createDiagram(
+							currentDiagram.getDiagramTypeId(), diagramId,
+							currentDiagram.isSnapToGrid());
+					currentDiagram.eResource().getContents().add(newDiagram);
 
-				linkedDiagram = newDiagram;
-			} else {
-				return diagrams;
+					linkedDiagram = newDiagram;
+				} else {
+					return diagrams;
+				}
 			}
 
 			if (!EcoreUtil.equals(currentDiagram, linkedDiagram)) {
