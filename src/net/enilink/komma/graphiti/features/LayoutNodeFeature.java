@@ -132,11 +132,66 @@ public class LayoutNodeFeature extends AbstractLayoutFeature {
 			}
 		}
 
+		// GA of the container shape, we need it to determine the valid range
+		// for connectors to be placed
+		GraphicsAlgorithm cga = containerShape.getGraphicsAlgorithm();
+
 		for (Shape shape : containerShape.getChildren()) {
 			GraphicsAlgorithm graphicsAlgorithm = shape.getGraphicsAlgorithm();
 			if (types.isInterface(shape)) {
 				// ensure that connectors are placed at object borders
-				
+				int x, y, cw, ch;
+				x = graphicsAlgorithm.getX();
+				y = graphicsAlgorithm.getY();
+				cw = cga.getWidth();
+				ch = textY;
+
+				// put the item into the valid range
+				if (x < 5)
+					graphicsAlgorithm.setX(5);
+				if (x > (cw - 15))
+					graphicsAlgorithm.setX(cga.getWidth() - 15);
+				if (y < 5)
+					graphicsAlgorithm.setY(5);
+				if (y > (ch - 15))
+					graphicsAlgorithm.setY(textY - 15);
+
+				// update these...
+				x = graphicsAlgorithm.getX();
+				y = graphicsAlgorithm.getY();
+
+				boolean needsAlignment = true;
+
+				// check whether the connector needs alignment, i.e. it is not
+				// clamped to one border
+				if (x == 5)
+					needsAlignment = false;
+				if (x == (cw - 15))
+					needsAlignment = false;
+				if (y == 5)
+					needsAlignment = false;
+				if (y == (ch - 15))
+					needsAlignment = false;
+
+				if (needsAlignment) {
+					// determine the closest border
+					int dl, dt, dr, db;
+					dl = x;
+					dt = y;
+					dr = cw - (x + 10);
+					db = ch - (y + 10);
+
+					int minDist = Math.min(Math.min(Math.min(dl, dt), dr), db);
+
+					if (minDist == dl)// clamp to left
+						graphicsAlgorithm.setX(5);
+					if (minDist == dt)// clamp to top
+						graphicsAlgorithm.setY(5);
+					if (minDist == dr)
+						graphicsAlgorithm.setX(cw - 15);
+					if (minDist == db)
+						graphicsAlgorithm.setY(ch - 15);
+				}
 			} else if (graphicsAlgorithm instanceof AbstractText) {
 				IDimension size = gaService.calculateSize(graphicsAlgorithm);
 				if (containerWidth != size.getWidth()) {
