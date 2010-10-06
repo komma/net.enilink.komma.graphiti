@@ -1,5 +1,6 @@
 package net.enilink.komma.graphiti.features;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -48,109 +49,120 @@ public class ShowConnectorsFeature extends AbstractCustomFeature {
 
 	@Override
 	public void execute(ICustomContext context) {
-		PictogramElement pe = context.getPictogramElements()[0];
-		Collection<Diagram> diagrams = diagramService.getLinkedDiagrams(pe,
-				true);
-
-		if (!(pe instanceof ContainerShape)) {
-			return;
-		}
-
-		ContainerShape nodeShape = (ContainerShape) pe;
-		for (Shape shape : nodeShape.getChildren()) {
-			if (shape instanceof ContainerShape) {
-				nodeShape = (ContainerShape) shape;
+		for (PictogramElement pe : context.getPictogramElements()) {
+			if (!(pe instanceof ContainerShape)) {
+				continue;
 			}
-		}
 
-		EList<Shape> csChildren = nodeShape.getChildren();
-		Map<IReference, Shape> currentConnectors = new HashMap<IReference, Shape>();
-
-		// first we determine all connectors we already have
-		for (Shape s : csChildren) {
-			if (types.isInterface(s)) {
-				currentConnectors
-						.put((IReference) getBusinessObjectForPictogramElement(s),
-								s);
+			ContainerShape nodeShape = (ContainerShape) pe;
+			for (Shape shape : nodeShape.getChildren()) {
+				if (shape instanceof ContainerShape) {
+					nodeShape = (ContainerShape) shape;
+				}
 			}
-		}
 
-		/*
-		 * EList<Shape> children = null;
-		 * 
-		 * if(pe instanceof ContainerShape){ children = ((ContainerShape)
-		 * pe).getChildren(); }
-		 */
+			EList<Shape> csChildren = nodeShape.getChildren();
+			Map<IReference, Shape> currentConnectors = new HashMap<IReference, Shape>();
 
-		// first, we need all model elements which are contained in the
-		// subordered diagram
-		if (diagrams.size() < 1)
-			return;// there is no subordered diagram.
+			// first we determine all connectors we already have
+			for (Shape s : csChildren) {
+				if (types.isInterface(s)) {
+					currentConnectors
+							.put((IReference) getBusinessObjectForPictogramElement(s),
+									s);
+				}
+			}
 
-		// take the first diagram for testing first
-		Diagram diq = diagrams.toArray(new Diagram[0])[0];
+			Collection<? extends Shape> children;
+			if (types.isExpanded(nodeShape)) {
+				children = new ArrayList<Shape>(nodeShape.getChildren());
+			} else {
+				Collection<Diagram> diagrams = diagramService
+						.getLinkedDiagrams(pe, false);
+				if (diagrams.isEmpty()) {
+					return;
+				}
+				children = diagrams.iterator().next().getChildren();
+			}
 
-		List<Shape> toLayout = new LinkedList<Shape>();
+			List<Shape> toLayout = new LinkedList<Shape>();
 
-		// we want all direct children's business objects
-		for (Shape s : diq.getChildren()) {
-			Object bo = getBusinessObjectForPictogramElement(s);
-
-			if (bo instanceof IReference) {
-				// simply count first...
-				// refCnt++;
-				// PictogramElement boPe =
-				// getFeatureProvider().getPictogramElementForBusinessObject(bo);
-				Shape connShape = currentConnectors.remove(bo);
-				if (connShape == null) {// boPe == null){
-					// we currently have no connector for this item, so we
-					// create one
-					Shape connectorShape = peService.createShape(nodeShape,
-							true);
-					types.designateInterface(connectorShape);
-
-					Ellipse newElli = gaService.createEllipse(connectorShape);
-					newElli.setStyle(styles.getStyleForToggle(getDiagram()));
-
-					peService.createChopboxAnchor(connectorShape);
-
-					// link the newly created shape with it's bo
-					link(connectorShape, bo);
-					// boPe = newShape;
-					connShape = connectorShape;
+			// we want all direct children's business objects
+			for (Shape s : children) {
+				// skip interfaces in case of an expanded node
+				if (types.isInterface(s)) {
+					continue;
 				}
 
-				toLayout.add((Shape) connShape);
+				Object bo = getBusinessObjectForPictogramElement(s);
+
+				if (bo instanceof IReference) {
+					Shape connShape = currentConnectors.remove(bo);
+					if (connShape == null) {
+						// we currently have no connector for this item, so we
+						// create one
+						Shape connectorShape = peService.createShape(nodeShape,
+								true);
+						types.designateInterface(connectorShape);
+
+						Ellipse newElli = gaService
+								.createEllipse(connectorShape);
+						newElli.setStyle(styles.getStyleForConnector(null));
+
+						peService.createChopboxAnchor(connectorShape);
+
+						// link the newly created shape with it's bo
+						link(connectorShape, bo);
+						// boPe = newShape;
+						connShape = connectorShape;
+					}
+
+					toLayout.add((Shape) connShape);
+				}
+			}
+
+			// everything that remains in the list connectorShapes does not have
+			// an
+			// assigned instance in the
+			// referenced diagram any more. Delete it.
+			for (Shape s : currentConnectors.values()) {
+				peService.deletePictogramElement(s);
+			}
+
+			// now we got all shapes together and need to layout them
+			int currY = 5;
+
+			for (Shape s : toLayout) {
+				gaService.setLocationAndSize(s.getGraphicsAlgorithm(), 5,
+						currY, 10, 10);
+				currY += 15;
 			}
 		}
-
-		// everything that remains in the list connectorShapes does not have an
-		// assigned instance in the
-		// referenced diagram any more. Delete it.
-		for (Shape s : currentConnectors.values()) {
-			peService.deletePictogramElement(s);
-		}
-
-		// now we got all shapes together and need to layout them
-		int currY = 5;
-
-		for (Shape s : toLayout) {
-			gaService.setLocationAndSize(s.getGraphicsAlgorithm(), 5, currY,
-					10, 10);
-			currY += 15;
-		}
-		// System.out.print(refCnt + " subordered model elements were found\n");
 	}
 
 	@Override
 	public boolean canExecute(ICustomContext context) {
-		PictogramElement[] pes = context.getPictogramElements();
-		Collection<Diagram> linkedDiagrams = diagramService.getLinkedDiagrams(
-				pes[0], false);
-		if (pes != null && pes.length == 1) {
-			Object bo = getBusinessObjectForPictogramElement(pes[0]);
-			if (bo instanceof IReference) {
-				return !linkedDiagrams.isEmpty();
+		for (PictogramElement pe : context.getPictogramElements()) {
+			if (!(pe instanceof ContainerShape)) {
+				return false;
+			}
+
+			ContainerShape nodeShape = (ContainerShape) pe;
+			for (Shape shape : nodeShape.getChildren()) {
+				if (shape instanceof ContainerShape) {
+					nodeShape = (ContainerShape) shape;
+				}
+			}
+
+			if (types.isExpanded(nodeShape)) {
+				return true;
+			} else {
+				Collection<Diagram> diagrams = diagramService
+						.getLinkedDiagrams(pe, false);
+				if (diagrams.isEmpty()) {
+					return false;
+				}
+				return true;
 			}
 		}
 		return false;

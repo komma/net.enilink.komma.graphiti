@@ -2,6 +2,7 @@ package net.enilink.komma.graphiti.service;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.NoSuchElementException;
 
 import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.ecore.EObject;
@@ -104,5 +105,18 @@ public class DiagramService implements IDiagramService {
 		}
 
 		return diagrams;
+	}
+
+	@Override
+	public Diagram getTopLevelDiagram() {
+		for (TreeIterator<EObject> i = EcoreUtil.getAllProperContents(
+				featureProvider.getDiagramTypeProvider().getDiagram()
+						.eResource().getContents(), false); i.hasNext();) {
+			EObject eObject = i.next();
+			if (eObject instanceof Diagram) {
+				return (Diagram) eObject;
+			}
+		}
+		throw new NoSuchElementException();
 	}
 }

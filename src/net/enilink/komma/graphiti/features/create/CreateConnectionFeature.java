@@ -9,6 +9,8 @@ import org.eclipse.graphiti.features.context.impl.AddConnectionContext;
 import org.eclipse.graphiti.features.impl.AbstractCreateConnectionFeature;
 import org.eclipse.graphiti.mm.pictograms.Anchor;
 import org.eclipse.graphiti.mm.pictograms.Connection;
+import org.eclipse.graphiti.mm.pictograms.Diagram;
+import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.graphiti.services.IPeService;
 import org.eclipse.jface.window.Window;
 import org.eclipse.ui.PlatformUI;
@@ -151,7 +153,34 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature {
 		super(fp, "Connection", "Create connection"); //$NON-NLS-1$ //$NON-NLS-2$
 	}
 
+	protected PictogramElement getContainer(Anchor anchor) {
+		PictogramElement pe = (PictogramElement) anchor.eContainer();
+		boolean isInterface = false;
+		if (types.isInterface(pe)) {
+			isInterface = true;
+		} else if (types.isExpanded(pe)) {
+			// directly use container if supplied pe is the node shape itself
+			pe = (PictogramElement) pe.eContainer();
+		}
+		while (!(pe instanceof Diagram || !isInterface && types.isExpanded(pe))) {
+			pe = (PictogramElement) pe.eContainer();
+		}
+		return pe;
+	}
+
 	public boolean canCreate(ICreateConnectionContext context) {
+		if (context.getSourceAnchor() == null
+				|| context.getTargetAnchor() == null) {
+			return false;
+		}
+
+		// do not allow direct connections between elements contained in an
+		// expanded node and other nodes
+		if (!getContainer(context.getSourceAnchor()).equals(
+				getContainer(context.getTargetAnchor()))) {
+			return false;
+		}
+
 		IEntity source = getEntity(context.getSourceAnchor());
 		IEntity target = getEntity(context.getTargetAnchor());
 

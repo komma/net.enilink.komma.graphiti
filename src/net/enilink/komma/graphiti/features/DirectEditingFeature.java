@@ -6,6 +6,7 @@ import org.eclipse.graphiti.features.context.IDirectEditingContext;
 import org.eclipse.graphiti.features.impl.AbstractDirectEditingFeature;
 import org.eclipse.graphiti.mm.algorithms.AbstractText;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
+import org.eclipse.jface.viewers.ILabelProvider;
 
 import com.google.inject.Inject;
 
@@ -15,6 +16,9 @@ import net.enilink.komma.graphiti.service.IDiagramService;
 public class DirectEditingFeature extends AbstractDirectEditingFeature {
 	@Inject
 	IDiagramService diagramService;
+
+	@Inject
+	ILabelProvider labelProvider;
 
 	@Inject
 	public DirectEditingFeature(IFeatureProvider fp) {
@@ -31,10 +35,7 @@ public class DirectEditingFeature extends AbstractDirectEditingFeature {
 		IResource resource = getResource(context.getPictogramElement());
 
 		if (resource != null) {
-			String label = resource.getRdfsLabel();
-			if (label != null) {
-				return label;
-			}
+			return labelProvider.getText(resource);
 		}
 
 		return "";

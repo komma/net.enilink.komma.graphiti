@@ -14,4 +14,6 @@ public interface IDiagramService {
 			boolean createOnDemand);
 
 	Object getFirstBusinessObject(GraphicsAlgorithmContainer element);
+
+	Diagram getTopLevelDiagram();
 }

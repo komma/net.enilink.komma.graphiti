@@ -2,6 +2,7 @@ package net.enilink.komma.graphiti.features;
 
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.emf.common.util.EList;
@@ -79,44 +80,50 @@ public class ExpandFeature extends AbstractCustomFeature {
 		for (PictogramElement pe : context.getPictogramElements()) {
 			pe = diagramService.getRootOrFirstElementWithBO(pe);
 
-			if (types.isExpanded(pe)) {
+			ContainerShape nodeShape = getNodeShape((ContainerShape) pe);
+			if (types.isExpanded(nodeShape)) {
 				continue;
 			}
+			types.designateExpanded(nodeShape);
 
-			// we need to create a new diagram here if there is none
+			Rectangle rect = null;
+
 			Collection<Diagram> diagrams = diagramService.getLinkedDiagrams(pe,
-					true);
-			Diagram diagram = diagrams.iterator().next();
+					false);
+			if (!diagrams.isEmpty()) {
+				Diagram diagram = diagrams.iterator().next();
+				diagram = EcoreUtil.copy(diagram);
 
-			types.designateExpanded(pe);
+				EList<Connection> conns = diagram.getConnections();
+				getDiagram().getConnections().addAll(conns);
 
-			diagram = EcoreUtil.copy(diagram);
+				// determine the number of pixels to shift all elements, i.e.
+				// the
+				// smallest x and y coordinates of the contained elements
+				// also determine maximum values
+				for (Shape s : diagram.getChildren()) {
+					GraphicsAlgorithm ga = s.getGraphicsAlgorithm();
 
-			EList<Connection> conns = diagram.getConnections();
-			getDiagram().getConnections().addAll(conns);
+					if (rect == null) {
+						rect = new Rectangle(ga.getX(), ga.getY(),
+								ga.getWidth(), ga.getHeight());
+					} else {
+						rect.union(ga.getX(), ga.getY(), ga.getWidth(),
+								ga.getHeight());
+					}
+				}
+
+				// add all diagram elements to our new container shape
+				nodeShape.getChildren().addAll(diagram.getChildren());
+			}
 
 			// create a new shape which will replace the current
-			ContainerShape nodeShape = getNodeShape((ContainerShape) pe);
 			GraphicsAlgorithm nodeGA = nodeShape.getGraphicsAlgorithm();
 
-			// determine the number of pixels to shift all elements, i.e. the
-			// smallest x and y coordinates of the contained elements
-			// also determine maximum values
-			Rectangle rect = null;
-			for (Shape s : diagram.getChildren()) {
-				GraphicsAlgorithm ga = s.getGraphicsAlgorithm();
-
-				if (rect == null) {
-					rect = new Rectangle(ga.getX(), ga.getY(), ga.getWidth(),
-							ga.getHeight());
-				} else {
-					rect.union(ga.getX(), ga.getY(), ga.getWidth(),
-							ga.getHeight());
-				}
-			}
 			if (rect == null) {
 				rect = new Rectangle();
 			}
+
 			// set reasonable width and height
 			rect.width = Math.max(nodeGA.getWidth(), rect.width);
 			rect.height = Math.max(nodeGA.getHeight(), rect.height);
@@ -131,21 +138,6 @@ public class ExpandFeature extends AbstractCustomFeature {
 			gaService.setSize(pe.getGraphicsAlgorithm(), rect.width,
 					rect.height);
 
-			// connectors get special handling since we want to connect them to
-			// their instances
-			LinkedList<Shape> connectors = new LinkedList<Shape>();
-			for (Shape child : nodeShape.getChildren()) {
-				if (types.isInterface(child)) {
-					// connectors are handled different since they shall be
-					// connected to their instances later
-					connectors.add(child);
-				}
-				// all other items are considered to be some kind of decorator
-				// and are not updated here.
-				// this will hopefully be done by the call to
-				// layoutPictogramElement() at the end of this function
-			}
-
 			Shape hiddenShape = peService.createShape(nodeShape, false);
 			hiddenShape.setVisible(false);
 
@@ -156,18 +148,25 @@ public class ExpandFeature extends AbstractCustomFeature {
 			rr.setBackground(gaService.manageColor(getDiagram(),
 					new ColorConstant(255, 255, 255)));
 
-			int shiftX = rect.x;
-			int shiftY = rect.y;
-			for (Shape s : diagram.getChildren()) {
-				GraphicsAlgorithm ga = s.getGraphicsAlgorithm();
+			// consider margins when shifting objects
+			int shiftX = rect.x - 15;
+			int shiftY = rect.y - 15;
+
+			List<Shape> connectors = new LinkedList<Shape>();
+			for (Shape child : nodeShape.getChildren()) {
+				if (types.isInterface(child)) {
+					// connectors are handled different since they shall be
+					// connected to their instances later
+					connectors.add(child);
+					continue;
+				}
+
+				GraphicsAlgorithm ga = child.getGraphicsAlgorithm();
 
 				// position child elements
 				ga.setX(ga.getX() - shiftX);
 				ga.setY(ga.getY() - shiftY);
 			}
-
-			// add all diagram elements to our new container shape
-			nodeShape.getChildren().addAll(diagram.getChildren());
 
 			// we need to add the children to this diagram first for the
 			// connection

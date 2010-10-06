@@ -27,9 +27,9 @@ public class CollapseFeature extends ExpandFeature {
 	public boolean canExecute(ICustomContext context) {
 		for (PictogramElement pe : context.getPictogramElements()) {
 			// this is to allow an expanded element to be closed by executing
-			// this
-			// feature on its container
-			if (types.isExpanded(pe)) {
+			// this feature on its container
+			if (pe instanceof ContainerShape
+					&& types.isExpanded(getNodeShape((ContainerShape) pe))) {
 				return true;
 			}
 
@@ -38,9 +38,10 @@ public class CollapseFeature extends ExpandFeature {
 	}
 
 	protected void collapse(ContainerShape cs) {
-		Collection<Diagram> diags = diagramService.getLinkedDiagrams(cs, false);
+		Collection<Diagram> diagrams = diagramService.getLinkedDiagrams(cs,
+				true);
 
-		if (diags.isEmpty())
+		if (diagrams.isEmpty())
 			return;
 
 		ContainerShape nodeShape = getNodeShape(cs);
@@ -66,7 +67,7 @@ public class CollapseFeature extends ExpandFeature {
 		nodeGa.setWidth(expandedNodeGa.getWidth());
 		nodeGa.setHeight(expandedNodeGa.getHeight());
 
-		Diagram diagram = diags.iterator().next();
+		Diagram diagram = diagrams.iterator().next();
 		boolean hasConnectors = false;
 
 		LinkedList<Shape> items = new LinkedList<Shape>();
@@ -179,9 +180,11 @@ public class CollapseFeature extends ExpandFeature {
 		for (PictogramElement pe : context.getPictogramElements()) {
 			pe = diagramService.getRootOrFirstElementWithBO(pe);
 
-			if (types.isExpanded(pe)) {
+			ContainerShape nodeShape = getNodeShape((ContainerShape) pe);
+			if (types.isExpanded(nodeShape)) {
 				collapse((ContainerShape) pe);
-				types.removeExpanded(pe);// must no longer be marked as expanded
+				types.removeExpanded(nodeShape);// must no longer be marked as
+												// expanded
 			}
 		}
 	}

@@ -8,6 +8,7 @@ import org.eclipse.graphiti.mm.algorithms.GraphicsAlgorithm;
 import org.eclipse.graphiti.mm.algorithms.Rectangle;
 import org.eclipse.graphiti.mm.algorithms.RoundedRectangle;
 import org.eclipse.graphiti.mm.pictograms.ContainerShape;
+import org.eclipse.graphiti.mm.pictograms.Diagram;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.graphiti.mm.pictograms.Shape;
 import org.eclipse.graphiti.services.IGaService;
@@ -20,6 +21,7 @@ import net.enilink.komma.concepts.IClass;
 import net.enilink.komma.graphiti.Styles;
 import net.enilink.komma.graphiti.SystemGraphicsAlgorithmRendererFactory;
 import net.enilink.komma.graphiti.features.create.IURIFactory;
+import net.enilink.komma.graphiti.service.ITypes;
 import net.enilink.komma.model.IModel;
 import net.enilink.komma.core.IEntity;
 import net.enilink.komma.core.IReference;
@@ -44,21 +46,25 @@ public class AddNodeFeature extends AbstractAddShapeFeature {
 	ILabelProvider labelProvider;
 
 	@Inject
+	ITypes types;
+
+	@Inject
 	public AddNodeFeature(IFeatureProvider fp) {
 		super(fp);
 	}
 
 	@Override
 	public boolean canAdd(IAddContext context) {
-		if (context.getNewObject() instanceof IEntity) {
-			// if (context.getTargetContainer() instanceof Diagram) {
-			if (!(context.getNewObject() instanceof IClass)) {
-				return getFeatureProvider()
-						.getPictogramElementForBusinessObject(
-								context.getNewObject()) == null;
+		if (context.getTargetContainer() instanceof Diagram
+				|| types.isExpanded(context.getTargetContainer())) {
+			if (context.getNewObject() instanceof IEntity) {
+				if (!(context.getNewObject() instanceof IClass)) {
+					return getFeatureProvider()
+							.getPictogramElementForBusinessObject(
+									context.getNewObject()) == null;
+				}
+				return true;
 			}
-			return true;
-			// }
 		}
 
 		return false;
@@ -97,7 +103,7 @@ public class AddNodeFeature extends AbstractAddShapeFeature {
 		{
 			RoundedRectangle roundedRectangle = gaService
 					.createRoundedRectangle(nodeShape, 15, 15);
-			roundedRectangle.setStyle(styles.getStyleForNode(getDiagram()));
+			roundedRectangle.setStyle(styles.getStyleForNode(null));
 
 			// create and set graphics algorithm
 			GraphicsAlgorithm ga = gaService.createPlatformGraphicsAlgorithm(
@@ -114,7 +120,7 @@ public class AddNodeFeature extends AbstractAddShapeFeature {
 			AbstractText text = gaService.createDefaultMultiText(shape,
 					labelProvider.getText(node));
 
-			text.setStyle(styles.getStyleForNodeText(getDiagram()));
+			text.setStyle(styles.getStyleForNodeText(null));
 		}
 
 		peService.createChopboxAnchor(nodeShape);

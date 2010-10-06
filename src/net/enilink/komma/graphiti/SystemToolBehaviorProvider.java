@@ -7,6 +7,7 @@ import org.eclipse.graphiti.features.context.IPictogramElementContext;
 import org.eclipse.graphiti.features.context.impl.CustomContext;
 import org.eclipse.graphiti.features.custom.ICustomFeature;
 import org.eclipse.graphiti.mm.algorithms.GraphicsAlgorithm;
+import org.eclipse.graphiti.mm.pictograms.Connection;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.graphiti.platform.IPlatformImageConstants;
 import org.eclipse.graphiti.tb.ContextButtonEntry;
@@ -80,7 +81,7 @@ public class SystemToolBehaviorProvider extends DefaultToolBehaviorProvider {
 			PictogramElement[] oldSelection) {
 		PictogramElement pe = diagramService
 				.getRootOrFirstElementWithBO(originalPe);
-		if (pe != null) {
+		if (pe != null && !(pe instanceof Connection)) {
 			return pe;
 		}
 		return super.getSelection(originalPe, oldSelection);

@@ -12,6 +12,8 @@ import org.eclipse.graphiti.util.PredefinedColoredAreas;
 
 import com.google.inject.Inject;
 
+import net.enilink.komma.graphiti.service.IDiagramService;
+
 public class Styles {
 
 	private static final IColorConstant NODE_TEXT_FOREGROUND = new ColorConstant(
@@ -23,8 +25,12 @@ public class Styles {
 	@Inject
 	IGaService gaService;
 
-	public Style getStyleForToggle(Diagram diagram) {
-		final String styleId = "TOGGLE"; //$NON-NLS-1$
+	@Inject
+	IDiagramService diagramService;
+
+	public Style getStyleForConnector(Diagram diagram) {
+		diagram = getTargetDiagram(diagram);
+		final String styleId = "CONNECTOR"; //$NON-NLS-1$
 
 		Style style = findStyle(diagram, styleId);
 
@@ -40,8 +46,9 @@ public class Styles {
 	}
 
 	public Style getStyleForNode(Diagram diagram) {
-		final String styleId = "NODE"; //$NON-NLS-1$
+		diagram = getTargetDiagram(diagram);
 
+		final String styleId = "NODE"; //$NON-NLS-1$
 		Style style = findStyle(diagram, styleId);
 
 		if (style == null) { // style not found - create new style
@@ -55,6 +62,8 @@ public class Styles {
 	}
 
 	public Style getStyleForNodeText(Diagram diagram) {
+		diagram = getTargetDiagram(diagram);
+
 		final String styleId = "NODE-TEXT"; //$NON-NLS-1$
 
 		// this is a child style of the e-class-style
@@ -68,6 +77,10 @@ public class Styles {
 					NODE_TEXT_FOREGROUND));
 		}
 		return style;
+	}
+
+	private Diagram getTargetDiagram(Diagram diagram) {
+		return diagram == null ? diagramService.getTopLevelDiagram() : diagram;
 	}
 
 	// find the style with a given id in the style-container, can return null
