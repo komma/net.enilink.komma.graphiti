@@ -21,6 +21,7 @@ import org.eclipse.graphiti.services.IPeCreateService;
 import org.eclipse.graphiti.services.IPeLayoutService;
 import org.eclipse.graphiti.services.IPeService;
 import org.eclipse.graphiti.tb.IToolBehaviorProvider;
+import org.eclipse.jface.viewers.ILabelProvider;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.ServiceReference;
@@ -34,12 +35,12 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.assistedinject.FactoryProvider;
 import com.google.inject.multibindings.Multibinder;
 
-import net.enilink.vocab.systems.SYSTEMS;
 import net.enilink.komma.common.adapter.IAdapterFactory;
 import net.enilink.komma.common.util.IResourceLocator;
 import net.enilink.komma.edit.domain.AdapterFactoryEditingDomain;
 import net.enilink.komma.edit.domain.IEditingDomainProvider;
 import net.enilink.komma.edit.ui.editor.KommaEditorSupport;
+import net.enilink.komma.edit.ui.provider.AdapterFactoryLabelProvider;
 import net.enilink.komma.edit.ui.views.IViewerMenuSupport;
 import net.enilink.komma.graphiti.features.create.CreateNodeFeature;
 import net.enilink.komma.graphiti.features.create.CreateNodeFeatureFactory;
@@ -203,7 +204,7 @@ public class SystemDiagramModule extends AbstractModule {
 				}
 			}
 
-			model.addImport(SYSTEMS.NAMESPACE_URI.trimFragment(), "systems");
+			// model.addImport(SYSTEMS.NAMESPACE_URI.trimFragment(), "systems");
 		}
 
 		return model;
@@ -222,6 +223,12 @@ public class SystemDiagramModule extends AbstractModule {
 	protected IFeatureProvider provideFeatureProvider(Injector injector) {
 		return new ConfigurableFeatureProviderWrapper(
 				injector.getInstance(SystemDiagramFeatureProvider.class));
+	}
+
+	@Provides
+	@Singleton
+	protected ILabelProvider provideLabelProvider(IAdapterFactory adapterFactory) {
+		return new AdapterFactoryLabelProvider(adapterFactory);
 	}
 
 	@Provides

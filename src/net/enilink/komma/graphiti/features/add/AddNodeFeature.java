@@ -8,17 +8,15 @@ import org.eclipse.graphiti.mm.algorithms.GraphicsAlgorithm;
 import org.eclipse.graphiti.mm.algorithms.Rectangle;
 import org.eclipse.graphiti.mm.algorithms.RoundedRectangle;
 import org.eclipse.graphiti.mm.pictograms.ContainerShape;
-import org.eclipse.graphiti.mm.pictograms.Diagram;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.graphiti.mm.pictograms.Shape;
 import org.eclipse.graphiti.services.IGaService;
 import org.eclipse.graphiti.services.IPeService;
+import org.eclipse.jface.viewers.ILabelProvider;
 
 import com.google.inject.Inject;
 
-import net.enilink.komma.common.adapter.IAdapterFactory;
 import net.enilink.komma.concepts.IClass;
-import net.enilink.komma.edit.ui.provider.AdapterFactoryLabelProvider;
 import net.enilink.komma.graphiti.Styles;
 import net.enilink.komma.graphiti.SystemGraphicsAlgorithmRendererFactory;
 import net.enilink.komma.graphiti.features.create.IURIFactory;
@@ -34,9 +32,6 @@ public class AddNodeFeature extends AbstractAddShapeFeature {
 	IURIFactory uriFactory;
 
 	@Inject
-	IAdapterFactory adapterFactory;
-
-	@Inject
 	Styles styles;
 
 	@Inject
@@ -44,6 +39,9 @@ public class AddNodeFeature extends AbstractAddShapeFeature {
 
 	@Inject
 	IPeService peService;
+
+	@Inject
+	ILabelProvider labelProvider;
 
 	@Inject
 	public AddNodeFeature(IFeatureProvider fp) {
@@ -79,22 +77,26 @@ public class AddNodeFeature extends AbstractAddShapeFeature {
 		// CONTAINER SHAPE WITH ROUNDED RECTANGLE
 		final ContainerShape container = peService.createContainerShape(
 				context.getTargetContainer(), true);
+		Rectangle invisibleRectangle = gaService
+				.createInvisibleRectangle(container);
+
 		// create link and wire it
 		link(container, node);
+
+		final ContainerShape nodeShape = peService.createContainerShape(
+				container, true);
 
 		// check whether the context has a size (e.g. from a create feature)
 		// otherwise define a default size for the shape
 		final int width = context.getWidth() <= 0 ? 50 : context.getWidth();
 		final int height = context.getHeight() <= 0 ? 50 : context.getHeight();
 
-		{
-			Rectangle invisibleRectangle = gaService
-					.createInvisibleRectangle(container);
-			gaService.setLocationAndSize(invisibleRectangle, context.getX(),
-					context.getY(), width, height);
+		gaService.setLocationAndSize(invisibleRectangle, context.getX(),
+				context.getY(), width, height);
 
+		{
 			RoundedRectangle roundedRectangle = gaService
-					.createRoundedRectangle(invisibleRectangle, 15, 15);
+					.createRoundedRectangle(nodeShape, 15, 15);
 			roundedRectangle.setStyle(styles.getStyleForNode(getDiagram()));
 
 			// create and set graphics algorithm
@@ -108,19 +110,14 @@ public class AddNodeFeature extends AbstractAddShapeFeature {
 			// create shape for text
 			Shape shape = peService.createShape(container, false);
 
-			AdapterFactoryLabelProvider labelProvider = new AdapterFactoryLabelProvider(
-					adapterFactory);
-
 			// create and set text graphics algorithm
 			AbstractText text = gaService.createDefaultMultiText(shape,
 					labelProvider.getText(node));
 
-			labelProvider.dispose();
-
 			text.setStyle(styles.getStyleForNodeText(getDiagram()));
 		}
 
-		peService.createChopboxAnchor(container);
+		peService.createChopboxAnchor(nodeShape);
 
 		layoutPictogramElement(container);
 

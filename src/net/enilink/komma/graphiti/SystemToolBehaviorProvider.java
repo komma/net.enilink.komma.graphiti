@@ -17,10 +17,14 @@ import com.google.inject.Inject;
 
 import net.enilink.komma.edit.domain.IEditingDomainProvider;
 import net.enilink.komma.edit.ui.views.IViewerMenuSupport;
+import net.enilink.komma.graphiti.service.IDiagramService;
 
 public class SystemToolBehaviorProvider extends DefaultToolBehaviorProvider {
 	@Inject
 	IViewerMenuSupport viewerMenuSupport;
+
+	@Inject
+	IDiagramService diagramService;
 
 	@Inject
 	public SystemToolBehaviorProvider(IDiagramTypeProvider diagramTypeProvider) {
@@ -59,6 +63,27 @@ public class SystemToolBehaviorProvider extends DefaultToolBehaviorProvider {
 		result.setX(ga.getX());
 		result.setY(ga.getY() + 2 * 50);
 		return result;
+	}
+
+	@Override
+	public GraphicsAlgorithm getSelectionBorder(PictogramElement pe) {
+		PictogramElement rootPe = diagramService
+				.getRootOrFirstElementWithBO(pe);
+		if (rootPe != null && rootPe.getGraphicsAlgorithm() != null) {
+			return rootPe.getGraphicsAlgorithm();
+		}
+		return super.getSelectionBorder(pe);
+	}
+
+	@Override
+	public PictogramElement getSelection(PictogramElement originalPe,
+			PictogramElement[] oldSelection) {
+		PictogramElement pe = diagramService
+				.getRootOrFirstElementWithBO(originalPe);
+		if (pe != null) {
+			return pe;
+		}
+		return super.getSelection(originalPe, oldSelection);
 	}
 
 	@Override

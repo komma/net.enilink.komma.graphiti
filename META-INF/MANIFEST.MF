@@ -8,7 +8,6 @@ Bundle-Activator: net.enilink.komma.graphiti.KommaGraphitiPlugin$Implementation
 Require-Bundle: org.eclipse.gef,
  org.eclipse.graphiti,
  org.eclipse.graphiti.ui,
- net.enilink.vocab.systems,
  org.eclipse.emf.transaction,
  org.eclipse.ui.views.properties.tabbed,
  net.enilink.komma.edit.ui,

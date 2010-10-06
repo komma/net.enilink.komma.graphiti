@@ -21,14 +21,11 @@ import org.eclipse.graphiti.services.IPeService;
 import com.google.inject.Inject;
 
 import net.enilink.komma.graphiti.Styles;
-import net.enilink.komma.graphiti.features.create.IURIFactory;
 import net.enilink.komma.graphiti.service.IDiagramService;
 import net.enilink.komma.graphiti.service.ITypes;
-import net.enilink.komma.model.IModel;
 import net.enilink.komma.core.IReference;
 
 public class ShowConnectorsFeature extends AbstractCustomFeature {
-
 	@Inject
 	IPeService peService;
 
@@ -37,12 +34,6 @@ public class ShowConnectorsFeature extends AbstractCustomFeature {
 
 	@Inject
 	Styles styles;
-
-	@Inject
-	IModel model;
-
-	@Inject
-	IURIFactory uriFactory;
 
 	@Inject
 	ITypes types;
@@ -60,14 +51,19 @@ public class ShowConnectorsFeature extends AbstractCustomFeature {
 		PictogramElement pe = context.getPictogramElements()[0];
 		Collection<Diagram> diagrams = diagramService.getLinkedDiagrams(pe,
 				true);
-		// Map<>
-		ContainerShape cs;
-		if (pe instanceof ContainerShape) {
-			cs = (ContainerShape) pe;
-		} else
-			return;
 
-		EList<Shape> csChildren = cs.getChildren();
+		if (!(pe instanceof ContainerShape)) {
+			return;
+		}
+
+		ContainerShape nodeShape = (ContainerShape) pe;
+		for (Shape shape : nodeShape.getChildren()) {
+			if (shape instanceof ContainerShape) {
+				nodeShape = (ContainerShape) shape;
+			}
+		}
+
+		EList<Shape> csChildren = nodeShape.getChildren();
 		Map<IReference, Shape> currentConnectors = new HashMap<IReference, Shape>();
 
 		// first we determine all connectors we already have
@@ -109,7 +105,8 @@ public class ShowConnectorsFeature extends AbstractCustomFeature {
 				if (connShape == null) {// boPe == null){
 					// we currently have no connector for this item, so we
 					// create one
-					Shape connectorShape = peService.createShape(cs, true);
+					Shape connectorShape = peService.createShape(nodeShape,
+							true);
 					types.designateInterface(connectorShape);
 
 					Ellipse newElli = gaService.createEllipse(connectorShape);

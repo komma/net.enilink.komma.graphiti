@@ -8,7 +8,6 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.mm.GraphicsAlgorithmContainer;
-import org.eclipse.graphiti.mm.pictograms.ContainerShape;
 import org.eclipse.graphiti.mm.pictograms.Diagram;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.graphiti.services.IPeService;
@@ -27,7 +26,10 @@ public class DiagramService implements IDiagramService {
 
 	public PictogramElement getRootOrFirstElementWithBO(
 			GraphicsAlgorithmContainer element) {
-		while (!(element instanceof ContainerShape || element.eContainer() instanceof Diagram)) {
+		if (element instanceof Diagram) {
+			return (PictogramElement) element;
+		}
+		while (!(element.eContainer() instanceof Diagram)) {
 			if (element instanceof PictogramElement
 					&& featureProvider
 							.getBusinessObjectForPictogramElement((PictogramElement) element) != null) {

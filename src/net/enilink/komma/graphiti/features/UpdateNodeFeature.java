@@ -13,22 +13,21 @@ import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.graphiti.mm.pictograms.Shape;
 import org.eclipse.graphiti.services.IGaService;
 import org.eclipse.graphiti.services.IPeService;
+import org.eclipse.jface.viewers.ILabelProvider;
 
 import com.google.inject.Inject;
 
-import net.enilink.komma.common.adapter.IAdapterFactory;
 import net.enilink.komma.concepts.IResource;
-import net.enilink.komma.edit.ui.provider.AdapterFactoryLabelProvider;
 
 public class UpdateNodeFeature extends AbstractUpdateFeature {
-	@Inject
-	IAdapterFactory adapterFactory;
-
 	@Inject
 	IGaService gaService;
 
 	@Inject
 	IPeService peService;
+
+	@Inject
+	ILabelProvider labelProvider;
 
 	@Inject
 	public UpdateNodeFeature(IFeatureProvider fp) {
@@ -61,13 +60,12 @@ public class UpdateNodeFeature extends AbstractUpdateFeature {
 		// Retrieve value from business model
 		Object bo = getBusinessObjectForPictogramElement(pictogramElement);
 		if (bo instanceof IResource) {
-			businessName = new AdapterFactoryLabelProvider(adapterFactory)
-					.getText(bo);
+			businessName = labelProvider.getText(bo);
 		}
 
 		// compare values
-		boolean needed = (pictogramName == null || !pictogramName
-				.equals(businessName));
+		boolean needed = pictogramName != null
+				&& !pictogramName.equals(businessName);
 		if (needed) {
 			return Reason.createTrueReason("Name is out of date");
 		} else {
@@ -82,8 +80,7 @@ public class UpdateNodeFeature extends AbstractUpdateFeature {
 		PictogramElement pictogramElement = context.getPictogramElement();
 		Object bo = getBusinessObjectForPictogramElement(pictogramElement);
 		if (bo instanceof IResource) {
-			businessName = new AdapterFactoryLabelProvider(adapterFactory)
-					.getText(bo);
+			businessName = labelProvider.getText(bo);
 
 			// Set name in pictogram model
 			if (pictogramElement instanceof ContainerShape) {

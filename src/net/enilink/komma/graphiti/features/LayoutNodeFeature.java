@@ -26,6 +26,7 @@ import org.eclipse.graphiti.mm.algorithms.AbstractText;
 import org.eclipse.graphiti.mm.algorithms.GraphicsAlgorithm;
 import org.eclipse.graphiti.mm.algorithms.PlatformGraphicsAlgorithm;
 import org.eclipse.graphiti.mm.pictograms.ContainerShape;
+import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.graphiti.mm.pictograms.Shape;
 import org.eclipse.graphiti.services.IGaService;
 
@@ -33,6 +34,7 @@ import com.google.inject.Inject;
 
 import net.enilink.komma.concepts.IResource;
 import net.enilink.komma.graphiti.SystemGraphicsAlgorithmRendererFactory;
+import net.enilink.komma.graphiti.service.IDiagramService;
 import net.enilink.komma.graphiti.service.ITypes;
 
 /**
@@ -52,6 +54,9 @@ public class LayoutNodeFeature extends AbstractLayoutFeature {
 	ITypes types;
 
 	@Inject
+	IDiagramService diagramService;
+
+	@Inject
 	public LayoutNodeFeature(IFeatureProvider fp) {
 		super(fp);
 	}
@@ -62,31 +67,23 @@ public class LayoutNodeFeature extends AbstractLayoutFeature {
 		}
 
 		// return true, if linked business object is a Class
-		Object bo = getBusinessObjectForPictogramElement(context
+		Object bo = diagramService.getFirstBusinessObject(context
 				.getPictogramElement());
 		return bo instanceof IResource;
 	}
 
 	public boolean layout(ILayoutContext context) {
 		boolean changed = false;
-		ContainerShape containerShape = (ContainerShape) context
-				.getPictogramElement();
+		ContainerShape containerShape = findOuterContainerShape(context
+				.getPictogramElement());
+		ContainerShape nodeShape = containerShape;
+		for (Shape shape : nodeShape.getChildren()) {
+			if (shape instanceof ContainerShape) {
+				nodeShape = (ContainerShape) shape;
+			}
+		}
 		GraphicsAlgorithm containerGa = containerShape.getGraphicsAlgorithm();
-
-		// height
-		int containerHeight = containerGa.getHeight();
-		if (containerHeight < MIN_HEIGHT) {
-			containerGa.setHeight(MIN_HEIGHT);
-			changed = true;
-		}
-
-		// width
-		int containerWidth = containerGa.getWidth();
-
-		if (containerWidth < MIN_WIDTH) {
-			containerGa.setWidth(MIN_WIDTH);
-			changed = true;
-		}
+		GraphicsAlgorithm nodeGa = nodeShape.getGraphicsAlgorithm();
 
 		int textHeight = 0;
 		for (Shape shape : containerShape.getChildren()) {
@@ -99,11 +96,27 @@ public class LayoutNodeFeature extends AbstractLayoutFeature {
 						.split("\r?\n").length * 20;
 			}
 		}
-		int textY = containerHeight - textHeight;
+		int textPadding = textHeight > 0 ? 10 : 0;
+
+		// height
+		int nodeHeight = Math.max(MIN_HEIGHT, containerGa.getHeight()
+				- textPadding - textHeight);
+		int textY = nodeHeight + textPadding;
+		if (containerGa.getHeight() != textY + textHeight) {
+			containerGa.setHeight(textY + textHeight);
+			changed = true;
+		}
+
+		// width
+		int nodeWidth = Math.max(MIN_WIDTH, containerGa.getWidth());
+		if (containerGa.getWidth() != nodeWidth) {
+			containerGa.setWidth(nodeWidth);
+			changed = true;
+		}
 
 		// resize all child GAs
-		Queue<GraphicsAlgorithm> queue = new LinkedList<GraphicsAlgorithm>(
-				containerGa.getGraphicsAlgorithmChildren());
+		Queue<GraphicsAlgorithm> queue = new LinkedList<GraphicsAlgorithm>();
+		queue.add(nodeGa);
 		while (!queue.isEmpty()) {
 			GraphicsAlgorithm childGa = queue.remove();
 
@@ -111,8 +124,8 @@ public class LayoutNodeFeature extends AbstractLayoutFeature {
 					&& ((PlatformGraphicsAlgorithm) childGa).getId().equals(
 							SystemGraphicsAlgorithmRendererFactory.NODE_FIGURE)) {
 				// scale and center image
-				int origWidth = containerWidth - 2 * IMAGE_PADDING;
-				int origHeight = textY - 2 * IMAGE_PADDING;
+				int origWidth = nodeWidth - 2 * IMAGE_PADDING;
+				int origHeight = nodeHeight - 2 * IMAGE_PADDING;
 
 				int length = Math.min(origWidth, origHeight);
 
@@ -125,8 +138,8 @@ public class LayoutNodeFeature extends AbstractLayoutFeature {
 				childGa.setX(0);
 				childGa.setY(0);
 
-				childGa.setWidth(containerWidth);
-				childGa.setHeight(containerHeight);
+				childGa.setWidth(nodeWidth);
+				childGa.setHeight(nodeHeight);
 
 				queue.addAll(childGa.getGraphicsAlgorithmChildren());
 			}
@@ -134,27 +147,25 @@ public class LayoutNodeFeature extends AbstractLayoutFeature {
 
 		// GA of the container shape, we need it to determine the valid range
 		// for connectors to be placed
-		GraphicsAlgorithm cga = containerShape.getGraphicsAlgorithm();
-
-		for (Shape shape : containerShape.getChildren()) {
+		for (Shape shape : nodeShape.getChildren()) {
 			GraphicsAlgorithm graphicsAlgorithm = shape.getGraphicsAlgorithm();
 			if (types.isInterface(shape)) {
 				// ensure that connectors are placed at object borders
 				int x, y, cw, ch;
 				x = graphicsAlgorithm.getX();
 				y = graphicsAlgorithm.getY();
-				cw = cga.getWidth();
-				ch = textY;
+				cw = nodeWidth;
+				ch = nodeHeight;
 
 				// put the item into the valid range
 				if (x < 5)
 					graphicsAlgorithm.setX(5);
 				if (x > (cw - 15))
-					graphicsAlgorithm.setX(cga.getWidth() - 15);
+					graphicsAlgorithm.setX(nodeWidth - 15);
 				if (y < 5)
 					graphicsAlgorithm.setY(5);
 				if (y > (ch - 15))
-					graphicsAlgorithm.setY(textY - 15);
+					graphicsAlgorithm.setY(nodeHeight - 15);
 
 				// update these...
 				x = graphicsAlgorithm.getX();
@@ -192,12 +203,21 @@ public class LayoutNodeFeature extends AbstractLayoutFeature {
 					if (minDist == db)
 						graphicsAlgorithm.setY(ch - 15);
 				}
-			} else if (graphicsAlgorithm instanceof AbstractText) {
+			}
+		}
+		for (Shape shape : containerShape.getChildren()) {
+			GraphicsAlgorithm graphicsAlgorithm = shape.getGraphicsAlgorithm();
+			if (graphicsAlgorithm instanceof AbstractText) {
 				IDimension size = gaService.calculateSize(graphicsAlgorithm);
-				if (containerWidth != size.getWidth()) {
-					gaService.setWidth(graphicsAlgorithm, containerWidth);
+				if (nodeWidth != size.getWidth()) {
+					gaService.setWidth(graphicsAlgorithm, nodeWidth);
 					changed = true;
 				}
+
+				// if (containerGa.getX() != graphicsAlgorithm.getX()) {
+				// graphicsAlgorithm.setX(containerGa.getX());
+				// changed = true;
+				// }
 
 				if (textY != graphicsAlgorithm.getY()) {
 					graphicsAlgorithm.setHeight(textHeight);
@@ -207,5 +227,11 @@ public class LayoutNodeFeature extends AbstractLayoutFeature {
 			}
 		}
 		return changed;
+	}
+
+	private ContainerShape findOuterContainerShape(
+			PictogramElement pictogramElement) {
+		return (ContainerShape) diagramService
+				.getRootOrFirstElementWithBO(pictogramElement);
 	}
 }

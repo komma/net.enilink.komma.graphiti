@@ -24,6 +24,7 @@ import org.eclipse.graphiti.features.context.IMoveShapeContext;
 import org.eclipse.graphiti.features.context.IPictogramElementContext;
 import org.eclipse.graphiti.features.context.IUpdateContext;
 import org.eclipse.graphiti.features.custom.ICustomFeature;
+import org.eclipse.graphiti.features.impl.DefaultMoveShapeFeature;
 import org.eclipse.graphiti.features.impl.IIndependenceSolver;
 import org.eclipse.graphiti.mm.algorithms.AbstractText;
 import org.eclipse.graphiti.mm.pictograms.ContainerShape;
@@ -34,24 +35,23 @@ import org.eclipse.graphiti.ui.features.DefaultFeatureProvider;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 
-import net.enilink.vocab.systems.SYSTEMS;
 import net.enilink.komma.common.adapter.IAdapterFactory;
 import net.enilink.komma.concepts.Connection;
 import net.enilink.komma.concepts.IProperty;
 import net.enilink.komma.concepts.IResource;
+import net.enilink.komma.graphiti.features.CollapseFeature;
 import net.enilink.komma.graphiti.features.DeleteFeature;
 import net.enilink.komma.graphiti.features.DirectEditingFeature;
 import net.enilink.komma.graphiti.features.DrillDownFeature;
 import net.enilink.komma.graphiti.features.ExpandFeature;
 import net.enilink.komma.graphiti.features.LayoutNodeFeature;
 import net.enilink.komma.graphiti.features.ShowConnectorsFeature;
-import net.enilink.komma.graphiti.features.ShowPoolObjectsFeature;
 import net.enilink.komma.graphiti.features.UpdateNodeFeature;
 import net.enilink.komma.graphiti.features.add.AddConnectionFeature;
 import net.enilink.komma.graphiti.features.add.AddNodeFeature;
 import net.enilink.komma.graphiti.features.create.CreateConnectionFeature;
 import net.enilink.komma.graphiti.features.create.CreateNodeFeatureFactory;
-import net.enilink.komma.graphiti.features.move.TestMoveConnectorFeature;
+import net.enilink.komma.graphiti.service.IDiagramService;
 import net.enilink.komma.graphiti.service.ITypes;
 import net.enilink.komma.model.IModel;
 import net.enilink.komma.core.IEntity;
@@ -129,14 +129,15 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 	public ICreateFeature[] getCreateFeatures() {
 		List<ICreateFeature> features = new ArrayList<ICreateFeature>();
 
-		features.add(createNodeFeatureFactory.create(SYSTEMS.TYPE_STATION,
-				"Station", "a processing station"));
-		features.add(createNodeFeatureFactory.create(SYSTEMS.TYPE_SOURCE,
-				"Source", "a source for a processing flow"));
-		features.add(createNodeFeatureFactory.create(SYSTEMS.TYPE_SINK, "Sink",
-				"a sink, the end point of a data flow"));
-		features.add(createNodeFeatureFactory.create(SYSTEMS.TYPE_HANDLING,
-				"Transport", "a transportation mechanism"));
+		// features.add(createNodeFeatureFactory.create(SYSTEMS.TYPE_STATION,
+		// "Station", "a processing station"));
+		// features.add(createNodeFeatureFactory.create(SYSTEMS.TYPE_SOURCE,
+		// "Source", "a source for a processing flow"));
+		// features.add(createNodeFeatureFactory.create(SYSTEMS.TYPE_SINK,
+		// "Sink",
+		// "a sink, the end point of a data flow"));
+		// features.add(createNodeFeatureFactory.create(SYSTEMS.TYPE_HANDLING,
+		// "Transport", "a transportation mechanism"));
 
 		return features.toArray(new ICreateFeature[features.size()]);
 	}
@@ -179,14 +180,14 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 	@Override
 	public ILayoutFeature getLayoutFeature(ILayoutContext context) {
 		PictogramElement pe = context.getPictogramElement();
-		Object theObject = getBusinessObjectForPictogramElement(pe);
+		Object bo = injector.getInstance(IDiagramService.class)
+				.getFirstBusinessObject(pe);
 		ILayoutFeature layoutFeature = (ILayoutFeature) adapterFactory.adapt(
-				theObject, ILayoutFeature.class);
-		if (null != layoutFeature) {
+				bo, ILayoutFeature.class);
+		if (layoutFeature != null) {
 			return layoutFeature;
 		}
-		if (pe instanceof ContainerShape
-				&& (getBusinessObjectForPictogramElement(pe) instanceof IResource)) {
+		if (pe instanceof ContainerShape && bo instanceof IResource) {
 			return injector.getInstance(LayoutNodeFeature.class);
 		}
 		return super.getLayoutFeature(context);
@@ -195,7 +196,14 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 	@Override
 	public IMoveShapeFeature getMoveShapeFeature(IMoveShapeContext context) {
 		if (typeService.isInterface(context.getShape())) {
-			return new TestMoveConnectorFeature(this);
+			return new DefaultMoveShapeFeature(this) {
+				@Override
+				protected void postMoveShape(IMoveShapeContext context) {
+					layoutPictogramElement(injector.getInstance(
+							IDiagramService.class).getRootOrFirstElementWithBO(
+							context.getShape().getContainer()));
+				}
+			};
 		}
 
 		return super.getMoveShapeFeature(context);
@@ -247,7 +255,7 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 		return new ICustomFeature[] {
 				injector.getInstance(DrillDownFeature.class),
 				injector.getInstance(ExpandFeature.class),
-				injector.getInstance(ShowConnectorsFeature.class),
-				injector.getInstance(ShowPoolObjectsFeature.class) };
+				injector.getInstance(CollapseFeature.class),
+				injector.getInstance(ShowConnectorsFeature.class) };
 	}
 }
