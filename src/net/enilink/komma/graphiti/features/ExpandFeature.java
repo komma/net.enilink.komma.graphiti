@@ -51,15 +51,17 @@ public class ExpandFeature extends AbstractCustomFeature {
 
 	@Override
 	public boolean canExecute(ICustomContext context) {
+		if (context.getPictogramElements() == null) {
+			return false;
+		}
 		for (PictogramElement pe : context.getPictogramElements()) {
 			pe = diagramService.getRootOrFirstElementWithBO(pe);
 
-			if (!(pe instanceof ContainerShape))
+			if (!(pe instanceof ContainerShape) || pe instanceof Diagram)
 				return false;// we need a shape representation to check the
 								// parent
 
 			ContainerShape cs = (ContainerShape) pe;
-
 			if (!cs.getContainer().equals(getDiagram()))
 				return false;// only allow this feature for first level
 								// instances

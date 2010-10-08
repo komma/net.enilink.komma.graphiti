@@ -51,6 +51,7 @@ import net.enilink.komma.graphiti.features.add.AddConnectionFeature;
 import net.enilink.komma.graphiti.features.add.AddNodeFeature;
 import net.enilink.komma.graphiti.features.create.CreateConnectionFeature;
 import net.enilink.komma.graphiti.features.create.CreateNodeFeatureFactory;
+import net.enilink.komma.graphiti.features.layout.AutoLayoutDiagramFeature;
 import net.enilink.komma.graphiti.service.IDiagramService;
 import net.enilink.komma.graphiti.service.ITypes;
 import net.enilink.komma.model.IModel;
@@ -256,6 +257,7 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 				injector.getInstance(DrillDownFeature.class),
 				injector.getInstance(ExpandFeature.class),
 				injector.getInstance(CollapseFeature.class),
-				injector.getInstance(ShowConnectorsFeature.class) };
+				injector.getInstance(ShowConnectorsFeature.class),
+				injector.getInstance(AutoLayoutDiagramFeature.class) };
 	}
 }

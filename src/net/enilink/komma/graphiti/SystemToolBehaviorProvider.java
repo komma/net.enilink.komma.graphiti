@@ -13,6 +13,7 @@ import org.eclipse.graphiti.platform.IPlatformImageConstants;
 import org.eclipse.graphiti.tb.ContextButtonEntry;
 import org.eclipse.graphiti.tb.DefaultToolBehaviorProvider;
 import org.eclipse.graphiti.tb.IContextButtonPadData;
+import org.eclipse.graphiti.tb.IContextMenuEntry;
 
 import com.google.inject.Inject;
 
@@ -31,7 +32,7 @@ public class SystemToolBehaviorProvider extends DefaultToolBehaviorProvider {
 	public SystemToolBehaviorProvider(IDiagramTypeProvider diagramTypeProvider) {
 		super(diagramTypeProvider);
 	}
-
+	
 	/**
 	 * This function is used to add buttons to the button pads of the items
 	 */
