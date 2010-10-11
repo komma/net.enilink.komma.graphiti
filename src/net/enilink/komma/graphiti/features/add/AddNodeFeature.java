@@ -14,19 +14,29 @@ import org.eclipse.graphiti.mm.pictograms.Shape;
 import org.eclipse.graphiti.services.IGaService;
 import org.eclipse.graphiti.services.IPeService;
 import org.eclipse.jface.viewers.ILabelProvider;
+import org.eclipse.jface.window.Window;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 
 import com.google.inject.Inject;
 
+import net.enilink.komma.common.adapter.IAdapterFactory;
 import net.enilink.komma.concepts.IClass;
+import net.enilink.komma.concepts.IProperty;
+import net.enilink.komma.edit.ui.provider.AdapterFactoryLabelProvider;
 import net.enilink.komma.graphiti.Styles;
 import net.enilink.komma.graphiti.SystemGraphicsAlgorithmRendererFactory;
 import net.enilink.komma.graphiti.features.create.IURIFactory;
+import net.enilink.komma.graphiti.features.util.IQueries;
+import net.enilink.komma.graphiti.service.IDiagramService;
 import net.enilink.komma.graphiti.service.ITypes;
 import net.enilink.komma.model.IModel;
 import net.enilink.komma.core.IEntity;
 import net.enilink.komma.core.IReference;
+import net.enilink.komma.core.IStatement;
+import net.enilink.komma.core.Statement;
 
-public class AddNodeFeature extends AbstractAddShapeFeature {
+public class AddNodeFeature extends AbstractAddShapeFeature implements IQueries {
 	@Inject
 	IModel model;
 
@@ -47,6 +57,9 @@ public class AddNodeFeature extends AbstractAddShapeFeature {
 
 	@Inject
 	ITypes types;
+
+	@Inject
+	IDiagramService diagramService;
 
 	@Inject
 	public AddNodeFeature(IFeatureProvider fp) {
@@ -70,8 +83,73 @@ public class AddNodeFeature extends AbstractAddShapeFeature {
 		return false;
 	}
 
+	protected IReference getProperty(IEntity target, IEntity nodeOrClass) {
+		// plain
+		IProperty[] properties;
+		if (nodeOrClass instanceof IClass) {
+			properties = model
+					.getManager()
+					.createQuery(
+							SELECT_APPLICABLE_CHILD_PROPERTIES_IF_OBJECT_IS_TYPE)
+					.setParameter("subject", target)
+					.setParameter("objectType", nodeOrClass)
+					.evaluate(IProperty.class).toList()
+					.toArray(new IProperty[0]);
+		} else {
+			properties = model.getManager()
+					.createQuery(SELECT_APPLICABLE_CHILD_PROPERTIES)
+					.setParameter("subject", target)
+					.setParameter("object", nodeOrClass)
+					.evaluate(IProperty.class).toList()
+					.toArray(new IProperty[0]);
+		}
+
+		if (properties.length == 0) {
+			return null;
+		}
+
+		IProperty property = null;
+		if (properties.length == 1) {
+			property = properties[0];
+		} else {
+			ElementListSelectionDialog selectionDialog = new ElementListSelectionDialog(
+					PlatformUI.getWorkbench().getActiveWorkbenchWindow()
+							.getShell(), labelProvider);
+			selectionDialog.setHelpAvailable(false);
+			selectionDialog.setElements(properties);
+			if (selectionDialog.open() == Window.OK) {
+				property = (IProperty) selectionDialog.getFirstResult();
+			}
+		}
+
+		return property;
+	}
+
+	/**
+	 * Creates a connection between two entities.
+	 */
+	private IStatement createStatement(IEntity source, IReference property,
+			IEntity target) {
+		Statement stmt = new Statement(source, property, target);
+		model.getManager().add(stmt);
+		return stmt;
+	}
+
 	@Override
 	public PictogramElement add(IAddContext context) {
+		ContainerShape targetContainer = context.getTargetContainer();
+		Object bo = diagramService.getFirstBusinessObject(targetContainer);
+
+		IReference property = null;
+		if (bo instanceof IReference) {
+			bo = model.resolve((IReference) bo);
+			property = getProperty(model.resolve((IReference) bo),
+					(IEntity) context.getNewObject());
+			if (property == null) {
+				return null;
+			}
+		}
+
 		IEntity node;
 		if (context.getNewObject() instanceof IClass) {
 			node = model.getManager().createNamed(uriFactory.createURI(),
@@ -80,9 +158,13 @@ public class AddNodeFeature extends AbstractAddShapeFeature {
 			node = (IEntity) context.getNewObject();
 		}
 
+		if (property != null) {
+			createStatement((IEntity) bo, property, node);
+		}
+
 		// CONTAINER SHAPE WITH ROUNDED RECTANGLE
 		final ContainerShape container = peService.createContainerShape(
-				context.getTargetContainer(), true);
+				targetContainer, true);
 		Rectangle invisibleRectangle = gaService
 				.createInvisibleRectangle(container);
 

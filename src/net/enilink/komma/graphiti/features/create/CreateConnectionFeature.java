@@ -23,6 +23,7 @@ import net.enilink.komma.common.adapter.IAdapterFactory;
 import net.enilink.komma.concepts.IClass;
 import net.enilink.komma.concepts.IProperty;
 import net.enilink.komma.edit.ui.provider.AdapterFactoryLabelProvider;
+import net.enilink.komma.graphiti.features.util.IQueries;
 import net.enilink.komma.graphiti.service.IDiagramService;
 import net.enilink.komma.graphiti.service.ITypes;
 import net.enilink.komma.model.IModel;
@@ -30,105 +31,9 @@ import net.enilink.komma.core.IEntity;
 import net.enilink.komma.core.IReference;
 import net.enilink.komma.core.IStatement;
 import net.enilink.komma.core.Statement;
-import net.enilink.komma.util.ISparqlConstants;
 
-public class CreateConnectionFeature extends AbstractCreateConnectionFeature {
-	private static final String SELECT_APPLICABLE_CONNECTION_PROPERTIES = ISparqlConstants.PREFIX //
-			+ "SELECT DISTINCT ?property " //
-			+ "WHERE { " //
-			+ "?subject rdf:type ?subjectType ." //
-			+ "?object rdf:type ?objectType . " //
-			+ "{" //
-			+ "		?property rdfs:domain ?subjectType ." //
-			+ "		?property rdfs:range ?objectType ." //
-			+ "} UNION {" //
-			+ "		?subjectType rdfs:subClassOf ?restriction ."
-			+ "		?restriction owl:onProperty ?superProperty . ?property rdfs:subPropertyOf ?superProperty ." //
-			+ "		{?restriction owl:allValuesFrom ?objectType} UNION {?restriction owl:someValuesFrom ?objectType}" //
-			+ "}" //
-			+ "OPTIONAL {" //
-			+ "		?subject rdf:type ?someSubjectType . " //
-			+ "		?someSubjectType rdfs:subClassOf ?otherRestr . ?otherRestr owl:onProperty ?property; owl:allValuesFrom ?someRange . " //
-			+ "		?someRange owl:complementOf ?complementClass . ?object rdf:type [rdfs:subClassOf ?complementClass] . "
-			+ "		FILTER (?restriction != ?otherRestr && ?someSubjectType != ?otherRestr)"
-			+ "}"
-			+ "FILTER (?subjectType != ?restriction && ! bound(?complementClass))"
-			+ "OPTIONAL {" //
-			+ "	?otherProperty rdfs:subPropertyOf ?property ." //
-			+ "	{" //
-			+ "		?otherProperty rdfs:domain ?subjectType ." //
-			+ "		?otherProperty rdfs:range ?objectType ." //
-			+ "	} UNION {" //
-			+ "		?subjectType rdfs:subClassOf ?otherRestriction ."
-			+ "		?otherRestriction owl:onProperty ?otherProperty ." //
-			+ "		{?otherRestriction owl:allValuesFrom ?objectType} UNION {?otherRestriction owl:someValuesFrom ?objectType}" //
-			+ "	}" //
-			+ "	FILTER (?property != ?otherProperty)" //
-			+ "}" //
-			+ "FILTER (! bound(?otherProperty))" //
-			+ "} ORDER BY ?property";
-
-	private static final String SELECT_APPLICABLE_CONNECTION_OBJECTS = ISparqlConstants.PREFIX //
-			+ "SELECT DISTINCT ?connectionType ?subjectProperty ?objectProperty " //
-			+ "WHERE { " //
-			+ "?subject rdf:type ?subjectType ." //
-			+ "?object rdf:type ?objectType . " //
-			+ "{" //
-			+ "		?subjectProperty rdfs:domain ?subjectType ." //
-			+ "		?subjectProperty rdfs:range ?connectionType ." //
-			+ "} UNION {" //
-			+ "		?subjectType rdfs:subClassOf ?subjectRestriction ."
-			+ "		?subjectRestriction owl:onProperty ?subjectProperty" //
-			+ "		{?subjectRestriction owl:allValuesFrom ?connectionType} UNION {?subjectRestriction owl:someValuesFrom ?connectionType}" //
-			+ "}" //
-			+ "?connectionType rdfs:subClassOf komma:Connection ."
-			+ "{" //
-			+ "		?objectProperty rdfs:domain ?connectionType ." //
-			+ "		?objectProperty rdfs:range ?objectType ." //
-			+ "} UNION {" //
-			+ "		?connectionType rdfs:subClassOf ?objectRestriction ."
-			+ "		?objectRestriction owl:onProperty ?objectProperty" //
-			+ "		{?objectRestriction owl:allValuesFrom ?objectType} UNION {?objectRestriction owl:someValuesFrom ?objectType}" //
-			+ "}" //
-
-			/*
-			 * + "OPTIONAL {" // + "		?subject rdf:type ?someSubjectType . " //
-			 * +
-			 * "		?someSubjectType rdfs:subClassOf ?otherRestr . ?otherRestr owl:onProperty ?property; owl:allValuesFrom ?someRange . "
-			 * // +
-			 * "		?someRange owl:complementOf ?complementClass . ?object rdf:type [rdfs:subClassOf ?complementClass] . "
-			 * // +
-			 * "		FILTER (?restriction != ?otherRestr && ?someSubjectType != ?otherRestr)"
-			 * // + "}"
-			 */
-
-			+ "FILTER (?subjectType != ?subjectRestriction && ?objectType != ?objectRestriction)"
-			// + "?property rdfs:subPropertyOf komma:relatedTo ." //
-			+ "OPTIONAL {" //
-			+ "	?otherSubjectProperty rdfs:subPropertyOf ?subjectProperty ." //
-			+ "	?otherObjectProperty rdfs:subPropertyOf ?objectProperty ." //
-			+ "	{" //
-			+ "		?otherSubjectProperty rdfs:domain ?subjectType ." //
-			+ "		?otherSubjectProperty rdfs:range ?connectionType ." //
-			+ "	} UNION {" //
-			+ "		?subjectType rdfs:subClassOf ?otherSubjectRestriction ."
-			+ "		?otherSubjectRestriction owl:onProperty ?otherSubjectProperty ." //
-			+ "		{?otherSubjectRestriction owl:allValuesFrom ?connectionType} UNION {?otherSubjectRestriction owl:someValuesFrom ?connectionType}"
-			+ "	}" //
-			+ "	{" //
-			+ "		?otherObjectProperty rdfs:domain ?connectionType ." //
-			+ "		?otherObjectProperty rdfs:range ?objectType ." //
-			+ "	} UNION {" //
-			+ "		?connectionType rdfs:subClassOf ?otherObjectRestriction ."
-			+ "		?otherObjectRestriction owl:onProperty ?otherObjectProperty ." //
-			+ "		{?otherObjectRestriction owl:allValuesFrom ?objectType} UNION {?otherObjectRestriction owl:someValuesFrom ?objectType}"
-			+ "	}" //
-			+ "	FILTER (?subjectProperty != ?otherSubjectProperty && ?objectProperty != ?otherObjectProperty)" //
-			+ "}" //
-			+ "FILTER (! bound(?otherSubjectProperty) && ! bound(?otherObjectProperty))" //
-
-			+ "} ORDER BY ?connectionType";
-
+public class CreateConnectionFeature extends AbstractCreateConnectionFeature
+		implements IQueries {
 	@Inject
 	IURIFactory uriFactory;
 
@@ -231,7 +136,6 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature {
 
 		if (source != null && target != null) {
 			// query for connection objects between source and target
-
 			IExtendedIterator<?> connClassAndProps = source.getKommaManager()
 					.createQuery(SELECT_APPLICABLE_CONNECTION_OBJECTS)
 					.setParameter("subject", source)

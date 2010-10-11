@@ -16,7 +16,6 @@ import org.eclipse.emf.common.util.EList;
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.context.ICustomContext;
 import org.eclipse.graphiti.features.custom.AbstractCustomFeature;
-import org.eclipse.graphiti.mm.algorithms.AlgorithmsFactory;
 import org.eclipse.graphiti.mm.algorithms.GraphicsAlgorithm;
 import org.eclipse.graphiti.mm.algorithms.styles.Point;
 import org.eclipse.graphiti.mm.algorithms.styles.StylesFactory;
@@ -136,6 +135,11 @@ public class AutoLayoutDiagramFeature extends AbstractCustomFeature {
 		}
 		EList<Connection> connections = d.getConnections();
 		for (Connection connection : connections) {
+			if (connection.getStart() == null || connection.getEnd() == null) {
+				// ignore invalid connections
+				continue;
+			}
+
 			Node source = getNodeForPe(shapeToNode, connection.getStart()
 					.getParent());
 			Node target = getNodeForPe(shapeToNode, connection.getEnd()

@@ -1,7 +1,6 @@
 package net.enilink.komma.graphiti;
 
 import org.eclipse.graphiti.dt.IDiagramTypeProvider;
-import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.context.ICustomContext;
 import org.eclipse.graphiti.features.context.IPictogramElementContext;
 import org.eclipse.graphiti.features.context.impl.CustomContext;
@@ -13,7 +12,6 @@ import org.eclipse.graphiti.platform.IPlatformImageConstants;
 import org.eclipse.graphiti.tb.ContextButtonEntry;
 import org.eclipse.graphiti.tb.DefaultToolBehaviorProvider;
 import org.eclipse.graphiti.tb.IContextButtonPadData;
-import org.eclipse.graphiti.tb.IContextMenuEntry;
 
 import com.google.inject.Inject;
 
@@ -32,18 +30,16 @@ public class SystemToolBehaviorProvider extends DefaultToolBehaviorProvider {
 	public SystemToolBehaviorProvider(IDiagramTypeProvider diagramTypeProvider) {
 		super(diagramTypeProvider);
 	}
-	
+
 	/**
 	 * This function is used to add buttons to the button pads of the items
 	 */
 	@Override
 	public IContextButtonPadData getContextButtonPad(
 			IPictogramElementContext context) {
-		IContextButtonPadData retVal = super.getContextButtonPad(context);
+		IContextButtonPadData padData = super.getContextButtonPad(context);
 		ICustomContext cc = getCustomContext(context);
-		IFeatureProvider fp = getFeatureProvider();
-		ICustomFeature[] features = fp.getCustomFeatures(cc);
-
+		ICustomFeature[] features = getFeatureProvider().getCustomFeatures(cc);
 		for (ICustomFeature feature : features) {
 			ContextButtonEntry button = new ContextButtonEntry(feature, cc);
 			button.setText(feature.getName());
@@ -51,10 +47,10 @@ public class SystemToolBehaviorProvider extends DefaultToolBehaviorProvider {
 			button.addDragAndDropFeature(features[0]);
 			button.setIconId(feature.getImageId() != null ? feature
 					.getImageId() : IPlatformImageConstants.IMG_EDIT_EXPAND);
-			retVal.getDomainSpecificContextButtons().add(button);
+			padData.getDomainSpecificContextButtons().add(button);
 		}
 
-		return retVal;
+		return padData;
 	}
 
 	private ICustomContext getCustomContext(IPictogramElementContext context) {

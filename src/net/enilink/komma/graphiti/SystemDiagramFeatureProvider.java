@@ -14,6 +14,7 @@ import org.eclipse.graphiti.features.IDirectEditingFeature;
 import org.eclipse.graphiti.features.IFeature;
 import org.eclipse.graphiti.features.ILayoutFeature;
 import org.eclipse.graphiti.features.IMoveShapeFeature;
+import org.eclipse.graphiti.features.IRemoveFeature;
 import org.eclipse.graphiti.features.IUpdateFeature;
 import org.eclipse.graphiti.features.context.IAddContext;
 import org.eclipse.graphiti.features.context.ICustomContext;
@@ -22,6 +23,7 @@ import org.eclipse.graphiti.features.context.IDirectEditingContext;
 import org.eclipse.graphiti.features.context.ILayoutContext;
 import org.eclipse.graphiti.features.context.IMoveShapeContext;
 import org.eclipse.graphiti.features.context.IPictogramElementContext;
+import org.eclipse.graphiti.features.context.IRemoveContext;
 import org.eclipse.graphiti.features.context.IUpdateContext;
 import org.eclipse.graphiti.features.custom.ICustomFeature;
 import org.eclipse.graphiti.features.impl.DefaultMoveShapeFeature;
@@ -45,6 +47,7 @@ import net.enilink.komma.graphiti.features.DirectEditingFeature;
 import net.enilink.komma.graphiti.features.DrillDownFeature;
 import net.enilink.komma.graphiti.features.ExpandFeature;
 import net.enilink.komma.graphiti.features.LayoutNodeFeature;
+import net.enilink.komma.graphiti.features.RemoveFeature;
 import net.enilink.komma.graphiti.features.ShowConnectorsFeature;
 import net.enilink.komma.graphiti.features.UpdateNodeFeature;
 import net.enilink.komma.graphiti.features.add.AddConnectionFeature;
@@ -121,7 +124,7 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 			}
 		});
 	}
-
+	
 	/**
 	 * This function is used to add object creation features. Every object the
 	 * plugin is intended to draw must be added here.
@@ -209,10 +212,15 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 
 		return super.getMoveShapeFeature(context);
 	}
-
+	
 	@Override
 	public IDeleteFeature getDeleteFeature(IDeleteContext context) {
 		return injector.getInstance(DeleteFeature.class);
+	}
+
+	@Override
+	public IRemoveFeature getRemoveFeature(IRemoveContext context) {
+		return injector.getInstance(RemoveFeature.class);
 	}
 
 	@Override
