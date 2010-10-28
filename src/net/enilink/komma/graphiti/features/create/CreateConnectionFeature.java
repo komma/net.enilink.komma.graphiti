@@ -1,6 +1,7 @@
 package net.enilink.komma.graphiti.features.create;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.graphiti.features.IFeatureProvider;
@@ -12,6 +13,7 @@ import org.eclipse.graphiti.mm.pictograms.Connection;
 import org.eclipse.graphiti.mm.pictograms.Diagram;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.graphiti.services.IPeService;
+import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.jface.window.Window;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.ElementListSelectionDialog;
@@ -19,10 +21,9 @@ import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 import com.google.inject.Inject;
 
 import net.enilink.commons.iterator.IExtendedIterator;
-import net.enilink.komma.common.adapter.IAdapterFactory;
 import net.enilink.komma.concepts.IClass;
 import net.enilink.komma.concepts.IProperty;
-import net.enilink.komma.edit.ui.provider.AdapterFactoryLabelProvider;
+import net.enilink.komma.concepts.IResource;
 import net.enilink.komma.graphiti.features.util.IQueries;
 import net.enilink.komma.graphiti.service.IDiagramService;
 import net.enilink.komma.graphiti.service.ITypes;
@@ -38,9 +39,6 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature
 	IURIFactory uriFactory;
 
 	@Inject
-	IAdapterFactory adapterFactory;
-
-	@Inject
 	IModel model;
 
 	@Inject
@@ -51,6 +49,9 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature
 
 	@Inject
 	ITypes types;
+
+	@Inject
+	ILabelProvider labelProvider;
 
 	@Inject
 	public CreateConnectionFeature(IFeatureProvider fp) {
@@ -135,13 +136,14 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature
 		IEntity target = getEntity(context.getTargetAnchor());
 
 		if (source != null && target != null) {
+			List<ConnectionContainer> connections = new ArrayList<ConnectionContainer>();
+			
 			// query for connection objects between source and target
 			IExtendedIterator<?> connClassAndProps = source.getKommaManager()
 					.createQuery(SELECT_APPLICABLE_CONNECTION_OBJECTS)
 					.setParameter("subject", source)
 					.setParameter("object", target).evaluate();
 
-			List<ConnectionContainer> connections = new ArrayList<ConnectionContainer>();
 			while (connClassAndProps.hasNext()) {
 				Object[] results = (Object[]) connClassAndProps.next();
 				// expect connection class, source and target properties
@@ -161,7 +163,7 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature
 					ElementListSelectionDialog selectionDialog = new ElementListSelectionDialog(
 							PlatformUI.getWorkbench()
 									.getActiveWorkbenchWindow().getShell(),
-							new AdapterFactoryLabelProvider(adapterFactory));
+							labelProvider);
 					selectionDialog.setHelpAvailable(false);
 					selectionDialog.setElements(connections
 							.toArray(new ConnectionContainer[0]));
@@ -192,27 +194,42 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature
 
 			} else {
 				// plain
-				IProperty[] properties = source.getKommaManager()
+				List<IProperty> properties = source.getKommaManager()
 						.createQuery(SELECT_APPLICABLE_CONNECTION_PROPERTIES)
 						.setParameter("subject", source)
 						.setParameter("object", target)
-						.evaluate(IProperty.class).toList()
-						.toArray(new IProperty[0]);
+						.evaluate(IProperty.class).toList();
 
-				if (properties.length == 0) {
+				if (properties.isEmpty()) {
 					return null;
 				}
 
+				// sort built-in properties after user defined properties
+				Collections.sort(properties, IResource.RANK_COMPARATOR);
+				// filter built-in properties, if more specialized properties
+				// are available
+				// TODO make filtering configurable
+				int start = 0;
+				for (IProperty property : properties) {
+					if (property.isOntLanguageTerm()) {
+						break;
+					}
+					start++;
+				}
+				if (start != 0) {
+					properties = properties.subList(0, start);
+				}
+
 				IProperty property = null;
-				if (properties.length == 1) {
-					property = properties[0];
+				if (properties.size() == 1) {
+					property = properties.iterator().next();
 				} else {
 					ElementListSelectionDialog selectionDialog = new ElementListSelectionDialog(
 							PlatformUI.getWorkbench()
 									.getActiveWorkbenchWindow().getShell(),
-							new AdapterFactoryLabelProvider(adapterFactory));
+							labelProvider);
 					selectionDialog.setHelpAvailable(false);
-					selectionDialog.setElements(properties);
+					selectionDialog.setElements(properties.toArray());
 					if (selectionDialog.open() == Window.OK) {
 						property = (IProperty) selectionDialog.getFirstResult();
 					}

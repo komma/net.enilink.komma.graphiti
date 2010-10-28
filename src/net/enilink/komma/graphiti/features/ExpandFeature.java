@@ -61,11 +61,6 @@ public class ExpandFeature extends AbstractCustomFeature {
 				return false;// we need a shape representation to check the
 								// parent
 
-			ContainerShape cs = (ContainerShape) pe;
-			if (!cs.getContainer().equals(getDiagram()))
-				return false;// only allow this feature for first level
-								// instances
-
 			Object bo = getBusinessObjectForPictogramElement(pe);
 			// only allow expanding RDF objects
 			if (bo instanceof IReference)

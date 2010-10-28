@@ -20,10 +20,8 @@ import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 
 import com.google.inject.Inject;
 
-import net.enilink.komma.common.adapter.IAdapterFactory;
 import net.enilink.komma.concepts.IClass;
 import net.enilink.komma.concepts.IProperty;
-import net.enilink.komma.edit.ui.provider.AdapterFactoryLabelProvider;
 import net.enilink.komma.graphiti.Styles;
 import net.enilink.komma.graphiti.SystemGraphicsAlgorithmRendererFactory;
 import net.enilink.komma.graphiti.features.create.IURIFactory;

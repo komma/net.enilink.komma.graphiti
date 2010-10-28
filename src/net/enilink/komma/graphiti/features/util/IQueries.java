@@ -6,8 +6,8 @@ public interface IQueries {
 	public static final String SELECT_APPLICABLE_CONNECTION_PROPERTIES = ISparqlConstants.PREFIX //
 			+ "SELECT DISTINCT ?property " //
 			+ "WHERE { " //
-			+ "?subject rdf:type ?subjectType . " //
-			+ "?object rdf:type ?objectType . " //
+			+ "?subject a ?subjectType . " //
+			+ "?object a ?objectType . " //
 			+ "{" //
 			+ "		?property rdfs:domain ?subjectType ." //
 			+ "		?property rdfs:range ?objectType ." //
@@ -16,13 +16,28 @@ public interface IQueries {
 			+ "		?restriction owl:onProperty ?superProperty . ?property rdfs:subPropertyOf ?superProperty ." //
 			+ "		{?restriction owl:allValuesFrom ?objectType} UNION {?restriction owl:someValuesFrom ?objectType}" //
 			+ "}" //
+
+			// exclude properties that can not be applied to
+			// the actual types of the subject and the object
+			+ "OPTIONAL {" //
+			+ "		?property rdfs:domain ?someDomain ." //
+			+ "		?property rdfs:range ?someRange ." //
+			+ "		OPTIONAL {"
+			+ " 		?subject a ?someDomain ."
+			+ " 		?object a ?someRange ."
+			+ " 		?subject a ?matchDummy ."
+			+ "		}"
+			+ "		FILTER (! bound(?matchDummy))"
+			+ "}"
+			+ "FILTER (! bound(?someDomain))"
+
 			+ "OPTIONAL {" //
 			+ "		?subject rdf:type ?subjectType2 . " //
 			+ "		?subjectType2 rdfs:subClassOf ?restriction2 . ?restriction2 owl:onProperty ?property2; owl:allValuesFrom [owl:complementOf ?complementClass] . " //
 			+ "		?object rdf:type [rdfs:subClassOf ?complementClass] . "
-			+ "		FILTER (?restriction != ?restriction2 && ?subjectType2 != ?restriction2)"
 			+ "}"
-			+ "FILTER (?subjectType != ?restriction && ! bound(?complementClass))"
+			+ "FILTER (! bound(?complementClass))"
+						
 			+ "OPTIONAL {" //
 			+ "	?property3 rdfs:subPropertyOf ?property ." //
 			+ "	?subject rdf:type ?subjectType3 . " //
@@ -38,6 +53,7 @@ public interface IQueries {
 			+ "	FILTER (?property != ?property3)" //
 			+ "}" //
 			+ "FILTER (! bound(?property3))" //
+			
 			+ "} ORDER BY ?property";
 
 	public static final String SELECT_APPLICABLE_CHILD_PROPERTIES = SELECT_APPLICABLE_CONNECTION_PROPERTIES;
@@ -46,31 +62,45 @@ public interface IQueries {
 			+ "SELECT DISTINCT ?property " //
 			+ "WHERE { " //
 			+ "?subject rdf:type ?subjectType . " //
+			+ "?objectType rdfs:subClassOf ?superObjectType ."
 			+ "{" //
 			+ "		?property rdfs:domain ?subjectType ." //
-			+ "		?property rdfs:range ?objectType ." //
+			+ "		?property rdfs:range ?superObjectType ." //
 			+ "} UNION {" //
 			+ "		?subjectType rdfs:subClassOf ?restriction ."
 			+ "		?restriction owl:onProperty ?superProperty . ?property rdfs:subPropertyOf ?superProperty ." //
-			+ "		{?restriction owl:allValuesFrom ?objectType} UNION {?restriction owl:someValuesFrom ?objectType}" //
+			+ "		{?restriction owl:allValuesFrom ?superObjectType} UNION {?restriction owl:someValuesFrom ?superObjectType}" //
 			+ "}" //
 			+ "OPTIONAL {" //
 			+ "		?subject rdf:type ?subjectType2 . " //
 			+ "		?subjectType2 rdfs:subClassOf ?restriction2 . ?restriction2 owl:onProperty ?property2; owl:allValuesFrom [owl:complementOf ?complementClass] . " //
 			+ "		?objectType rdfs:subClassOf ?complementClass . "
-			+ "		FILTER (?restriction != ?restriction2 && ?subjectType2 != ?restriction2)"
 			+ "}"
-			+ "FILTER (?subjectType != ?restriction && ! bound(?complementClass))"
+
+			// exclude properties that can not be applied to
+			// the actual types of the subject and the given object type
+			+ "OPTIONAL {" //
+			+ "		?property rdfs:domain ?someDomain ." //
+			+ "		?property rdfs:range ?someRange ." //
+			+ "		OPTIONAL {"
+			+ " 		?subject a ?someDomain ."
+			+ " 		?objectType rdfs:subClassOf ?someRange ."
+			+ " 		?subject a ?matchDummy ."
+			+ "		}"
+			+ "		FILTER (! bound(?matchDummy))"
+			+ "}"
+			+ "FILTER (! bound(?someDomain) && ! bound(?complementClass))"
+
 			+ "OPTIONAL {" //
 			+ "	?property3 rdfs:subPropertyOf ?property ." //
 			+ "	?subject rdf:type ?subjectType3 . " //
 			+ "	{" //
 			+ "		?property3 rdfs:domain ?subjectType3 ." //
-			+ "		?property3 rdfs:range ?objectType ." //
+			+ "		?property3 rdfs:range ?superObjectType ." //
 			+ "	} UNION {" //
 			+ "		?subjectType3 rdfs:subClassOf ?restriction3 ."
 			+ "		?restriction3 owl:onProperty ?property3 ." //
-			+ "		{?restriction3 owl:allValuesFrom ?objectType} UNION {?restriction3 owl:someValuesFrom ?objectType}" //
+			+ "		{?restriction3 owl:allValuesFrom ?superObjectType} UNION {?restriction3 owl:someValuesFrom ?superObjectType}" //
 			+ "	}" //
 			+ "	FILTER (?property != ?property3)" //
 			+ "}" //
