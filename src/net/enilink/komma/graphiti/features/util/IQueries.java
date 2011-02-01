@@ -19,40 +19,40 @@ public interface IQueries {
 
 			// exclude properties that can not be applied to
 			// the actual types of the subject and the object
-			+ "OPTIONAL {" //
-			+ "		?property rdfs:domain ?someDomain ." //
-			+ "		?property rdfs:range ?someRange ." //
-			+ "		OPTIONAL {"
-			+ " 		?subject a ?someDomain ."
-			+ " 		?object a ?someRange ."
-			+ " 		?subject a ?matchDummy ."
-			+ "		}"
-			+ "		FILTER (! bound(?matchDummy))"
-			+ "}"
-			+ "FILTER (! bound(?someDomain))"
-
-			+ "OPTIONAL {" //
-			+ "		?subject rdf:type ?subjectType2 . " //
-			+ "		?subjectType2 rdfs:subClassOf ?restriction2 . ?restriction2 owl:onProperty ?property2; owl:allValuesFrom [owl:complementOf ?complementClass] . " //
-			+ "		?object rdf:type [rdfs:subClassOf ?complementClass] . "
-			+ "}"
-			+ "FILTER (! bound(?complementClass))"
-						
-			+ "OPTIONAL {" //
-			+ "	?property3 rdfs:subPropertyOf ?property ." //
-			+ "	?subject rdf:type ?subjectType3 . " //
-			+ " ?object rdf:type ?objectType3 . " //
-			+ "	{" //
-			+ "		?property3 rdfs:domain ?subjectType3 ." //
-			+ "		?property3 rdfs:range ?objectType3 ." //
-			+ "	} UNION {" //
-			+ "		?subjectType3 rdfs:subClassOf ?restriction3 ."
-			+ "		?restriction3 owl:onProperty ?property3 ." //
-			+ "		{?restriction3 owl:allValuesFrom ?objectType3} UNION {?restriction3 owl:someValuesFrom ?objectType3}" //
-			+ "	}" //
-			+ "	FILTER (?property != ?property3)" //
-			+ "}" //
-			+ "FILTER (! bound(?property3))" //
+//			+ "OPTIONAL {" //
+//			+ "		?property rdfs:domain ?someDomain ." //
+//			+ "		?property rdfs:range ?someRange ." //
+//			+ "		OPTIONAL {"
+//			+ " 		?subject a ?someDomain ."
+//			+ " 		?object a ?someRange ."
+//			+ " 		?subject a ?matchDummy ."
+//			+ "		}"
+//			+ "		FILTER (! bound(?matchDummy))"
+//			+ "}"
+//			+ "FILTER (! bound(?someDomain))"
+//
+//			+ "OPTIONAL {" //
+//			+ "		?subject rdf:type ?subjectType2 . " //
+//			+ "		?subjectType2 rdfs:subClassOf ?restriction2 . ?restriction2 owl:onProperty ?property2; owl:allValuesFrom [owl:complementOf ?complementClass] . " //
+//			+ "		?object rdf:type [rdfs:subClassOf ?complementClass] . "
+//			+ "}"
+//			+ "FILTER (! bound(?complementClass))"
+//						
+//			+ "OPTIONAL {" //
+//			+ "	?property3 rdfs:subPropertyOf ?property ." //
+//			+ "	?subject rdf:type ?subjectType3 . " //
+//			+ " ?object rdf:type ?objectType3 . " //
+//			+ "	{" //
+//			+ "		?property3 rdfs:domain ?subjectType3 ." //
+//			+ "		?property3 rdfs:range ?objectType3 ." //
+//			+ "	} UNION {" //
+//			+ "		?subjectType3 rdfs:subClassOf ?restriction3 ."
+//			+ "		?restriction3 owl:onProperty ?property3 ." //
+//			+ "		{?restriction3 owl:allValuesFrom ?objectType3} UNION {?restriction3 owl:someValuesFrom ?objectType3}" //
+//			+ "	}" //
+//			+ "	FILTER (?property != ?property3)" //
+//			+ "}" //
+//			+ "FILTER (! bound(?property3))" //
 			
 			+ "} ORDER BY ?property";
 

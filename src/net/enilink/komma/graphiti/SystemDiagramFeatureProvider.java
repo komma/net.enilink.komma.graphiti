@@ -97,9 +97,12 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 					if (uri != null) {
 						return uri.toString();
 					}
+					throw new IllegalArgumentException(
+							"Key requested for unnamed object.");
 				}
-				throw new IllegalArgumentException(
-						"Key requested for unnamed object.");
+				// unknown object
+				return null;
+
 			}
 
 			@Override
@@ -124,7 +127,7 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 			}
 		});
 	}
-	
+
 	/**
 	 * This function is used to add object creation features. Every object the
 	 * plugin is intended to draw must be added here.
@@ -212,7 +215,7 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 
 		return super.getMoveShapeFeature(context);
 	}
-	
+
 	@Override
 	public IDeleteFeature getDeleteFeature(IDeleteContext context) {
 		return injector.getInstance(DeleteFeature.class);

@@ -1,10 +1,10 @@
 package net.enilink.komma.graphiti.model;
 
-import java.net.URL;
 import java.util.Collection;
 
 import org.eclipse.core.resources.IProject;
 
+import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 
@@ -17,13 +17,14 @@ import net.enilink.komma.edit.provider.ComposedAdapterFactory;
 import net.enilink.komma.edit.provider.ReflectiveItemProviderAdapterFactory;
 import net.enilink.komma.model.IModel;
 import net.enilink.komma.model.IModelSet;
+import net.enilink.komma.model.IModelSetFactory;
 import net.enilink.komma.model.MODELS;
 import net.enilink.komma.model.ModelCore;
-import net.enilink.komma.model.base.ModelSetFactory;
+import net.enilink.komma.model.ModelSetModule;
 import net.enilink.komma.core.KommaModule;
 import net.enilink.komma.core.URI;
-import net.enilink.komma.core.URIImpl;
 import net.enilink.komma.util.KommaUtil;
+import net.enilink.komma.util.RoleClassLoader;
 import net.enilink.komma.workbench.IProjectModelSet;
 import net.enilink.komma.workbench.ProjectModelSetSupport;
 
@@ -36,27 +37,27 @@ public class ModelSetManager {
 		module.addConcept(IProjectModelSet.class);
 		module.addBehaviour(ProjectModelSetSupport.class);
 
-		IModelSet modelSet = new ModelSetFactory(module,
-				URIImpl.createURI(MODELS.NAMESPACE +
-				// "MemoryModelSet" //
-						"OwlimModelSet" //
-						// "AGModelSet" //
-				), URIImpl.createURI(MODELS.NAMESPACE + "ProjectModelSet") //
-		).createModelSet();
+		IModelSetFactory factory = Guice.createInjector(
+				new ModelSetModule(module)).getInstance(IModelSetFactory.class);
+
+		IModelSet modelSet = factory.createModelSet(//
+				MODELS.NAMESPACE_URI.appendFragment("OwlimModelSet"), //
+				MODELS.NAMESPACE_URI.appendFragment("ProjectModelSet") //
+				);
 
 		if (modelSet instanceof IProjectModelSet && project != null) {
 			((IProjectModelSet) modelSet).setProject(project);
 		}
 
-		for (URL url : KommaUtil
-				.getBundleMetaInfLocations("net.enilink.vocab.systems")) {
-			modelSet.getModule().addLibrary(url);
-		}
-
-		for (URL url : KommaUtil
-				.getBundleMetaInfLocations("net.enilink.modeling.bpmn2")) {
-			modelSet.getModule().addLibrary(url);
-		}
+		RoleClassLoader roleClassLoader = new RoleClassLoader(
+				modelSet.getModule());
+		roleClassLoader
+				.load(KommaUtil
+						.getBundleMetaInfLocations(
+								"net.enilink.vocab.systems")
+						.andThen(
+								KommaUtil
+										.getBundleMetaInfLocations("net.enilink.modeling.bpmn2")));
 
 		initializeEditingDomain(modelSet);
 		return modelSet;

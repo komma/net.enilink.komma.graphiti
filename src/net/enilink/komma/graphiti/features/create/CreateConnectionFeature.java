@@ -139,19 +139,19 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature
 			List<ConnectionContainer> connections = new ArrayList<ConnectionContainer>();
 			
 			// query for connection objects between source and target
-			IExtendedIterator<?> connClassAndProps = source.getKommaManager()
-					.createQuery(SELECT_APPLICABLE_CONNECTION_OBJECTS)
-					.setParameter("subject", source)
-					.setParameter("object", target).evaluate();
-
-			while (connClassAndProps.hasNext()) {
-				Object[] results = (Object[]) connClassAndProps.next();
-				// expect connection class, source and target properties
-				if (results.length == 3)
-					connections.add(new ConnectionContainer(
-							(IClass) results[0], (IProperty) results[1],
-							(IProperty) results[2]));
-			}
+//			IExtendedIterator<?> connClassAndProps = source.getKommaManager()
+//					.createQuery(SELECT_APPLICABLE_CONNECTION_OBJECTS)
+//					.setParameter("subject", source)
+//					.setParameter("object", target).evaluate();
+//
+//			while (connClassAndProps.hasNext()) {
+//				Object[] results = (Object[]) connClassAndProps.next();
+//				// expect connection class, source and target properties
+//				if (results.length == 3)
+//					connections.add(new ConnectionContainer(
+//							(IClass) results[0], (IProperty) results[1],
+//							(IProperty) results[2]));
+//			}
 
 			// connection objects or plain connections
 			if (!connections.isEmpty()) {
@@ -194,7 +194,7 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature
 
 			} else {
 				// plain
-				List<IProperty> properties = source.getKommaManager()
+				List<IProperty> properties = source.getEntityManager()
 						.createQuery(SELECT_APPLICABLE_CONNECTION_PROPERTIES)
 						.setParameter("subject", source)
 						.setParameter("object", target)
