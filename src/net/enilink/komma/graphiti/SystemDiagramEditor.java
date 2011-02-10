@@ -78,6 +78,15 @@ public class SystemDiagramEditor extends DiagramEditor implements
 	}
 
 	@Override
+	public boolean isDirty() {
+		if (super.isDirty()) {
+			return true;
+		}
+		return ((SystemDiagramTypeProvider) getDiagramTypeProvider())
+				.getModel().isModified();
+	}
+
+	@Override
 	public void firePropertyChange(int property) {
 		super.firePropertyChange(property);
 	}
