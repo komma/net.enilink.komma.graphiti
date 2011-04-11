@@ -49,6 +49,7 @@ import net.enilink.komma.graphiti.features.ExpandFeature;
 import net.enilink.komma.graphiti.features.LayoutNodeFeature;
 import net.enilink.komma.graphiti.features.RemoveFeature;
 import net.enilink.komma.graphiti.features.ShowConnectorsFeature;
+import net.enilink.komma.graphiti.features.UpdateDiagramFeature;
 import net.enilink.komma.graphiti.features.UpdateNodeFeature;
 import net.enilink.komma.graphiti.features.add.AddConnectionFeature;
 import net.enilink.komma.graphiti.features.add.AddNodeFeature;
@@ -97,8 +98,6 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 					if (uri != null) {
 						return uri.toString();
 					}
-					throw new IllegalArgumentException(
-							"Key requested for unnamed object.");
 				}
 				// unknown object
 				return null;
@@ -228,6 +227,11 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 
 	@Override
 	public IUpdateFeature getUpdateFeature(IUpdateContext context) {
+		// update diagram according to layout model
+		if (context.getPictogramElement() instanceof Diagram) {
+			return injector.getInstance(UpdateDiagramFeature.class);
+		}
+
 		Object bo = getBusinessObjectForPictogramElement(context
 				.getPictogramElement());
 		if (bo instanceof IResource) {

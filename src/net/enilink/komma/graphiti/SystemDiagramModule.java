@@ -34,6 +34,7 @@ import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.assistedinject.FactoryProvider;
 import com.google.inject.multibindings.Multibinder;
+import com.google.inject.name.Named;
 
 import net.enilink.komma.common.adapter.IAdapterFactory;
 import net.enilink.komma.common.util.IResourceLocator;
@@ -143,8 +144,8 @@ public class SystemDiagramModule extends AbstractModule {
 	protected IProxyService provideProxyService() {
 		BundleContext bundleContext = FrameworkUtil.getBundle(this.getClass())
 				.getBundleContext();
-		ServiceReference serviceRef = bundleContext
-				.getServiceReference(IProxyService.class.getName());
+		ServiceReference<IProxyService> serviceRef = bundleContext
+				.getServiceReference(IProxyService.class);
 		if (serviceRef != null) {
 			return (IProxyService) bundleContext.getService(serviceRef);
 		}
@@ -190,6 +191,23 @@ public class SystemDiagramModule extends AbstractModule {
 		URI modelUri = URIImpl.createURI(diagramTypeProvider.getDiagram()
 				.eResource().getURI().appendFileExtension("owl").toString());
 
+		return loadModel(modelSet, modelUri);
+	}
+
+	@Provides
+	@Singleton
+	@Named("layout")
+	protected IModel provideLayoutModel(IModelSet modelSet,
+			IDiagramTypeProvider diagramTypeProvider) {
+		URI modelUri = URIImpl.createURI(diagramTypeProvider.getDiagram()
+				.eResource().getURI().appendFileExtension("layout.owl")
+				.toString());
+
+		// TODO add import for layout ontology
+		return loadModel(modelSet, modelUri);
+	}
+
+	protected IModel loadModel(IModelSet modelSet, URI modelUri) {
 		IModel model = modelSet.getModel(modelUri, false);
 		if (model == null) {
 			model = modelSet.createModel(modelUri);
@@ -203,10 +221,7 @@ public class SystemDiagramModule extends AbstractModule {
 					KommaGraphitiPlugin.INSTANCE.log(e);
 				}
 			}
-
-			// model.addImport(SYSTEMS.NAMESPACE_URI.trimFragment(), "systems");
 		}
-
 		return model;
 	}
 

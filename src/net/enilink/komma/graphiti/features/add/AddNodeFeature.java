@@ -197,8 +197,8 @@ public class AddNodeFeature extends AbstractAddShapeFeature implements IQueries 
 			Shape shape = peService.createShape(container, false);
 
 			// create and set text graphics algorithm
-			AbstractText text = gaService.createDefaultMultiText(shape,
-					labelProvider.getText(node));
+			AbstractText text = gaService.createDefaultMultiText(getDiagram(),
+					shape, labelProvider.getText(node));
 
 			text.setStyle(styles.getStyleForNodeText(null));
 		}

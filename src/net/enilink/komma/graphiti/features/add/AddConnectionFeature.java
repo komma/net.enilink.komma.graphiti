@@ -78,7 +78,7 @@ public class AddConnectionFeature extends AbstractAddFeature {
 		// add dynamic text decorator for the reference name
 		ConnectionDecorator textDecorator = peCreateService
 				.createConnectionDecorator(connection, true, 0.5, true);
-		Text text = gaService.createDefaultText(textDecorator);
+		Text text = gaService.createDefaultText(getDiagram(), textDecorator);
 		// text.setStyle(StyleUtil.getStyleForEClassText((getDiagram())));
 		gaService.setLocation(text, 10, 0);
 		// set reference name in the text decorator

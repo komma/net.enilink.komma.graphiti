@@ -3,13 +3,28 @@ package net.enilink.komma.graphiti;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.SubProgressMonitor;
+import org.eclipse.emf.common.command.CommandStack;
+import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.emf.ecore.resource.ResourceSet;
+import org.eclipse.emf.transaction.RecordingCommand;
+import org.eclipse.emf.transaction.TransactionalEditingDomain;
 import org.eclipse.gef.GraphicalViewer;
+import org.eclipse.graphiti.mm.pictograms.Diagram;
+import org.eclipse.graphiti.services.Graphiti;
 import org.eclipse.graphiti.ui.editor.DiagramEditor;
+import org.eclipse.graphiti.ui.editor.DiagramEditorFactory;
+import org.eclipse.graphiti.ui.editor.DiagramEditorInput;
+import org.eclipse.graphiti.ui.internal.services.GraphitiUiInternal;
 import org.eclipse.jface.dialogs.ProgressMonitorDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.ui.IEditorInput;
+import org.eclipse.ui.IEditorSite;
+import org.eclipse.ui.IFileEditorInput;
+import org.eclipse.ui.PartInitException;
 
 import net.enilink.komma.common.ui.EclipseUtil;
 import net.enilink.komma.edit.ui.editor.ISupportedEditor;
@@ -22,6 +37,50 @@ public class SystemDiagramEditor extends DiagramEditor implements
 	 * The Constant DIAGRAM_EDITOR_ID.
 	 */
 	public static final String DIAGRAM_EDITOR_ID = "de.fhg.iwu.komma.graphiti.test.SystemDiagramEditor"; //$NON-NLS-1$
+
+	@Override
+	public void init(IEditorSite site, IEditorInput input)
+			throws PartInitException {
+		// Eclipse may call us with an IFileEditorInput when a file is to be
+		// opened. Try to convert this to a diagram input.
+		if (!(input instanceof DiagramEditorInput)) {
+			if (input instanceof IFileEditorInput) {
+				final IFileEditorInput fileInput = (IFileEditorInput) input;
+				final IFile file = fileInput.getFile();
+				if (file.toString().endsWith(".diagram.layout.owl")) {
+					String providerId = "de.fhg.iwu.komma.graphiti.test.TestDiagramTypeProvider";
+					URI fileURI = URI.createPlatformResourceURI(file
+							.getFullPath().toString(), true);
+
+					final TransactionalEditingDomain domain = new DiagramEditorFactory()
+							.createResourceSetAndEditingDomain();
+
+					final Diagram newDiagram = Graphiti.getPeService()
+							.createDiagram(providerId, "Diagram", false);
+
+					final ResourceSet resourceSet = domain.getResourceSet();
+					// Create a resource for this file.
+					final Resource resource = resourceSet
+							.createResource(fileURI.trimFileExtension()
+									.trimFileExtension());
+
+					final CommandStack commandStack = domain.getCommandStack();
+					commandStack.execute(new RecordingCommand(domain) {
+						@Override
+						protected void doExecute() {
+							resource.setTrackingModification(true);
+							resource.getContents().add(newDiagram);
+
+						}
+					});
+
+					input = DiagramEditorInput.createEditorInput(newDiagram,
+							domain, providerId, true);
+				}
+			}
+		}
+		super.init(site, input);
+	}
 
 	@Override
 	public void doSave(IProgressMonitor monitor) {
@@ -39,9 +98,16 @@ public class SystemDiagramEditor extends DiagramEditor implements
 				// Save the resources to the file system.
 				IModel model = ((SystemDiagramTypeProvider) getDiagramTypeProvider())
 						.getModel();
+
+				// Save the layout to the file system.
+				IModel layoutModel = ((SystemDiagramTypeProvider) getDiagramTypeProvider())
+						.getLayoutModel();
+
 				// if (model.isModified()) {
 				try {
 					model.save(saveOptions);
+
+					layoutModel.save(saveOptions);
 				} catch (Exception exception) {
 					// ignore
 				}

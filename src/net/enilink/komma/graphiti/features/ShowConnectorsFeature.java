@@ -105,9 +105,9 @@ public class ShowConnectorsFeature extends AbstractCustomFeature {
 								true);
 						types.designateInterface(connectorShape);
 
-						Ellipse newElli = gaService
+						Ellipse ellipse = gaService
 								.createEllipse(connectorShape);
-						newElli.setStyle(styles.getStyleForConnector(null));
+						ellipse.setStyle(styles.getStyleForConnector(null));
 
 						peService.createChopboxAnchor(connectorShape);
 
@@ -115,23 +115,21 @@ public class ShowConnectorsFeature extends AbstractCustomFeature {
 						link(connectorShape, bo);
 						// boPe = newShape;
 						connShape = connectorShape;
-					}
 
-					toLayout.add((Shape) connShape);
+						toLayout.add((Shape) connShape);
+					}
 				}
 			}
 
 			// everything that remains in the list connectorShapes does not have
-			// an
-			// assigned instance in the
-			// referenced diagram any more. Delete it.
+			// an assigned instance in the referenced diagram any more. Delete
+			// it.
 			for (Shape s : currentConnectors.values()) {
 				peService.deletePictogramElement(s);
 			}
 
 			// now we got all shapes together and need to layout them
 			int currY = 5;
-
 			for (Shape s : toLayout) {
 				gaService.setLocationAndSize(s.getGraphicsAlgorithm(), 5,
 						currY, 10, 10);

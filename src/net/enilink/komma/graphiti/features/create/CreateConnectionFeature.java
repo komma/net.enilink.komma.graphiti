@@ -20,7 +20,6 @@ import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 
 import com.google.inject.Inject;
 
-import net.enilink.commons.iterator.IExtendedIterator;
 import net.enilink.komma.concepts.IClass;
 import net.enilink.komma.concepts.IProperty;
 import net.enilink.komma.concepts.IResource;

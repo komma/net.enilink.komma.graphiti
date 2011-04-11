@@ -51,13 +51,8 @@ public class ModelSetManager {
 
 		RoleClassLoader roleClassLoader = new RoleClassLoader(
 				modelSet.getModule());
-		roleClassLoader
-				.load(KommaUtil
-						.getBundleMetaInfLocations(
-								"net.enilink.vocab.systems")
-						.andThen(
-								KommaUtil
-										.getBundleMetaInfLocations("net.enilink.modeling.bpmn2")));
+		roleClassLoader.load(KommaUtil
+				.getBundleMetaInfLocations("net.enilink.komma.graphiti"));
 
 		initializeEditingDomain(modelSet);
 		return modelSet;
