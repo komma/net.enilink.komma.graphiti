@@ -75,14 +75,17 @@ public class SystemDiagramTypeProvider extends AbstractDiagramTypeProvider
 
 			IFeatureProvider featureProvider = getFeatureProvider();
 			for (INotification notification : notifications) {
-				PictogramElement element = featureProvider
-						.getPictogramElementForBusinessObject(notification
-								.getSubject());
-				if (element != null) {
-					if (elements == null) {
-						elements = new HashSet<PictogramElement>();
+				if (notification.getSubject() instanceof IReference
+						&& ((IReference) notification.getSubject()).getURI() != null) {
+					PictogramElement element = featureProvider
+							.getPictogramElementForBusinessObject(notification
+									.getSubject());
+					if (element != null) {
+						if (elements == null) {
+							elements = new HashSet<PictogramElement>();
+						}
+						elements.add(element);
 					}
-					elements.add(element);
 				}
 			}
 			if (elements != null) {
