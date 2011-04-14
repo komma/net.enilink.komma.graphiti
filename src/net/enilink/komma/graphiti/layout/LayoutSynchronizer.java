@@ -1,16 +1,17 @@
 package net.enilink.komma.graphiti.layout;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.graphiti.mm.algorithms.AlgorithmsPackage;
-import org.eclipse.graphiti.mm.pictograms.Anchor;
 import org.eclipse.graphiti.mm.pictograms.Connection;
 import org.eclipse.graphiti.mm.pictograms.FreeFormConnection;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
@@ -21,14 +22,14 @@ import com.google.inject.Inject;
 import net.enilink.commons.iterator.IClosableIterator;
 import net.enilink.vocab.rdf.RDF;
 import net.enilink.komma.graphiti.service.IDiagramService;
+import net.enilink.komma.graphiti.service.ITypes;
 import net.enilink.komma.model.IModel;
 import net.enilink.komma.core.IEntityManager;
-import net.enilink.komma.core.IGraph;
 import net.enilink.komma.core.IQuery;
-import net.enilink.komma.core.IReference;
 import net.enilink.komma.core.IStatement;
-import net.enilink.komma.core.LinkedHashGraph;
+import net.enilink.layout.ConnectorShape;
 import net.enilink.layout.Dimension;
+import net.enilink.layout.ExpandedShape;
 import net.enilink.layout.LAYOUT;
 import net.enilink.layout.Pictogram;
 import net.enilink.layout.Point;
@@ -50,13 +51,16 @@ public class LayoutSynchronizer implements ILayoutConstants {
 	@Inject
 	protected IDiagramService diagramService;
 
+	@Inject
+	protected ITypes types;
+
 	protected Map<EStructuralFeature, LayoutUpdater> updaters = new HashMap<EStructuralFeature, LayoutUpdater>();
 	protected IModel layoutModel;
 	protected Set<Object> updateCommands = new HashSet<Object>();
 
 	protected Map<PictogramElement, UpdateInfo> updates = new HashMap<PictogramElement, UpdateInfo>();
 
-	protected IGraph transientEntities = new LinkedHashGraph();
+	protected Map<List<?>, Object> transientEntities = new HashMap<List<?>, Object>();
 
 	public LayoutSynchronizer(IModel layoutModel) {
 		this.layoutModel = layoutModel;
@@ -77,6 +81,56 @@ public class LayoutSynchronizer implements ILayoutConstants {
 			info.target = target;
 		}
 		info.feature.add(feature);
+	}
+
+	protected Shape getOrCreateShape(IQuery<Shape> shapeQuery,
+			PictogramElement pe) {
+		pe = (PictogramElement) diagramService.getRootOrFirstElementWithBO(pe);
+
+		Object target = diagramService.getFirstBusinessObject(pe);
+		if (target == null) {
+			return null;
+		}
+
+		Object context = null;
+		if (types.isInterface(pe)) {
+			context = getOrCreateShape(shapeQuery,
+					(PictogramElement) pe.eContainer());
+		} else {
+			if (pe.eContainer() != null) {
+				context = diagramService
+						.getFirstBusinessObject((PictogramElement) pe
+								.eContainer());
+			}
+		}
+		if (context == null) {
+			context = RDF.NIL;
+		}
+
+		List<?> key = Arrays.asList(Shape.class, target, context);
+		Shape shape = (Shape) transientEntities.get(key);
+		if (shape == null) {
+			shapeQuery.setParameter("target", target);
+			shapeQuery.setParameter("context", context);
+
+			shape = first(shapeQuery.evaluate());
+		}
+		if (shape == null) {
+			shape = layoutModel.getManager().create(
+					types.isInterface(pe) ? ConnectorShape.class : Shape.class);
+			shape.setLayoutTarget(target);
+			shape.setLayoutContext(context);
+
+			transientEntities.put(key, shape);
+		}
+		if (types.isExpanded(pe)) {
+			layoutModel.getManager()
+					.designateEntity(shape, ExpandedShape.class);
+		} else {
+			layoutModel.getManager().removeDesignation(shape,
+					ExpandedShape.class);
+		}
+		return shape;
 	}
 
 	public void update(IProgressMonitor progressMonitor) {
@@ -114,11 +168,15 @@ public class LayoutSynchronizer implements ILayoutConstants {
 					if (target instanceof IStatement) {
 						target = ((IStatement) target).getPredicate();
 					}
-					Object start = getFirstBusinessObject(((Connection) pe)
-							.getStart());
-					Object end = getFirstBusinessObject(((Connection) pe)
-							.getEnd());
-					if (start == null || end == null) {
+
+					Shape start = getOrCreateShape(shapeQuery,
+							((Connection) pe).getStart().getParent());
+					if (start == null) {
+						continue;
+					}
+					Shape end = getOrCreateShape(shapeQuery, ((Connection) pe)
+							.getEnd().getParent());
+					if (end == null) {
 						continue;
 					}
 
@@ -133,18 +191,13 @@ public class LayoutSynchronizer implements ILayoutConstants {
 						connection = em
 								.create(net.enilink.layout.Connection.class);
 						connection.setLayoutTarget(target);
+						connection.setLayoutContext(context);
+						connection.setLayoutStart(start);
+						connection.setLayoutEnd(end);
 					}
 					p = connection;
 				} else {
-					shapeQuery.setParameter("target", updateInfo.target);
-					shapeQuery.setParameter("context", context);
-
-					Shape shape = first(shapeQuery.evaluate());
-					if (shape == null) {
-						shape = em.create(Shape.class);
-						shape.setLayoutTarget(updateInfo.target);
-					}
-					p = shape;
+					p = getOrCreateShape(shapeQuery, pe);
 				}
 				for (EStructuralFeature feature : updateInfo.feature) {
 					LayoutUpdater updater = updaters.get(feature);
@@ -179,16 +232,14 @@ public class LayoutSynchronizer implements ILayoutConstants {
 	protected Dimension getDimension(Shape shape) {
 		Dimension d = shape.getLayoutDimension();
 		if (d == null) {
-			IStatement stmt = first(transientEntities.filter(shape,
-					LAYOUT.PROPERTY_DIMENSION, null).iterator());
-			if (stmt != null) {
-				d = (Dimension) stmt.getObject();
-			}
+			d = (Dimension) transientEntities.get(Arrays.asList(shape,
+					LAYOUT.PROPERTY_DIMENSION));
 		}
 		if (d == null) {
 			d = layoutModel.getManager().create(Dimension.class);
 			shape.setLayoutDimension(d);
-			transientEntities.add(shape, LAYOUT.PROPERTY_DIMENSION, d);
+			transientEntities.put(
+					Arrays.asList(shape, LAYOUT.PROPERTY_DIMENSION), d);
 		}
 		return d;
 	}
@@ -196,16 +247,14 @@ public class LayoutSynchronizer implements ILayoutConstants {
 	protected Position getPosition(Shape shape) {
 		Position p = shape.getLayoutPosition();
 		if (p == null) {
-			IStatement stmt = first(transientEntities.filter(shape,
-					LAYOUT.PROPERTY_POSITION, null).iterator());
-			if (stmt != null) {
-				p = (Position) stmt.getObject();
-			}
+			p = (Position) transientEntities.get(Arrays.asList(shape,
+					LAYOUT.PROPERTY_POSITION));
 		}
 		if (p == null) {
 			p = layoutModel.getManager().create(Position.class);
 			shape.setLayoutPosition(p);
-			transientEntities.add(shape, LAYOUT.PROPERTY_POSITION, p);
+			transientEntities.put(
+					Arrays.asList(shape, LAYOUT.PROPERTY_POSITION), p);
 		}
 		return p;
 	}
@@ -273,7 +322,7 @@ public class LayoutSynchronizer implements ILayoutConstants {
 								Position position = manager
 										.create(Position.class);
 								position.setLayoutX((double) bendPoint.getX());
-								position.setLayoutX((double) bendPoint.getY());
+								position.setLayoutY((double) bendPoint.getY());
 								point.setLayoutPosition(position);
 
 								points.add(point);
@@ -285,30 +334,16 @@ public class LayoutSynchronizer implements ILayoutConstants {
 			@Override
 			public void update(Pictogram p, PictogramElement sourcePe,
 					EStructuralFeature feature) {
-				Connection c = (Connection) sourcePe;
-				Object obj = getFirstBusinessObject(c.getStart());
-				if (obj == null || obj instanceof IReference) {
-					((net.enilink.layout.Connection) p)
-							.setLayoutStart(obj);
-				}
+				// do nothing, already handled by update method
 			}
 		});
 		updaters.put(pp.getConnection_End(), new LayoutUpdater() {
 			@Override
 			public void update(Pictogram p, PictogramElement sourcePe,
 					EStructuralFeature feature) {
-				Connection c = (Connection) sourcePe;
-				Object obj = getFirstBusinessObject(c.getEnd());
-				if (obj == null || obj instanceof IReference) {
-					((net.enilink.layout.Connection) p)
-							.setLayoutStart(obj);
-				}
+				// do nothing, already handled by update method
 			}
 		});
-	}
-
-	protected Object getFirstBusinessObject(Anchor anchor) {
-		return diagramService.getFirstBusinessObject(anchor.getParent());
 	}
 
 	public boolean isRelevantFeature(EStructuralFeature feature) {

@@ -23,7 +23,7 @@
 		</diagramTypeProvider>
 	</extension>
 	
-	   <extension
+	<extension
          point="org.eclipse.ui.editors">
  	  <editor
           class="net.enilink.komma.graphiti.SystemDiagramEditor"
@@ -38,5 +38,14 @@
              contentTypeId="org.eclipse.graphiti.content.diagram">
        </contentTypeBinding>
       </editor>
+   </extension>
+   
+   <extension
+         point="net.enilink.komma.model.uriMapRules">
+      <rule
+            pattern="http://enilink.net/vocab/layout"
+            priority="30"
+            replacement="platform:/plugin/net.enilink.komma.graphiti/META-INF/ontologies/layout">
+      </rule>
    </extension>
 </plugin>

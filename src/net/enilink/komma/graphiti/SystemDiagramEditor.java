@@ -18,10 +18,10 @@ import org.eclipse.graphiti.services.Graphiti;
 import org.eclipse.graphiti.ui.editor.DiagramEditor;
 import org.eclipse.graphiti.ui.editor.DiagramEditorFactory;
 import org.eclipse.graphiti.ui.editor.DiagramEditorInput;
-import org.eclipse.graphiti.ui.internal.services.GraphitiUiInternal;
 import org.eclipse.jface.dialogs.ProgressMonitorDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.ui.IEditorInput;
+import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IEditorSite;
 import org.eclipse.ui.IFileEditorInput;
 import org.eclipse.ui.PartInitException;
@@ -38,6 +38,8 @@ public class SystemDiagramEditor extends DiagramEditor implements
 	 */
 	public static final String DIAGRAM_EDITOR_ID = "de.fhg.iwu.komma.graphiti.test.SystemDiagramEditor"; //$NON-NLS-1$
 
+	protected boolean useNativeGraphitiFormat = true;
+
 	@Override
 	public void init(IEditorSite site, IEditorInput input)
 			throws PartInitException {
@@ -48,6 +50,8 @@ public class SystemDiagramEditor extends DiagramEditor implements
 				final IFileEditorInput fileInput = (IFileEditorInput) input;
 				final IFile file = fileInput.getFile();
 				if (file.toString().endsWith(".diagram.layout.owl")) {
+					useNativeGraphitiFormat = false;
+
 					String providerId = "de.fhg.iwu.komma.graphiti.test.TestDiagramTypeProvider";
 					URI fileURI = URI.createPlatformResourceURI(file
 							.getFullPath().toString(), true);
@@ -106,7 +110,6 @@ public class SystemDiagramEditor extends DiagramEditor implements
 				// if (model.isModified()) {
 				try {
 					model.save(saveOptions);
-
 					layoutModel.save(saveOptions);
 				} catch (Exception exception) {
 					// ignore
@@ -132,7 +135,12 @@ public class SystemDiagramEditor extends DiagramEditor implements
 			// KommaEditUIPlugin.INSTANCE.log(exception);
 		}
 
-		super.doSave(new SubProgressMonitor(monitor, 1));
+		if (useNativeGraphitiFormat) {
+			super.doSave(new SubProgressMonitor(monitor, 1));
+		} else {
+			getEditDomain().getCommandStack().flush();
+			firePropertyChange(IEditorPart.PROP_DIRTY);
+		}
 	}
 
 	@Override
@@ -145,11 +153,13 @@ public class SystemDiagramEditor extends DiagramEditor implements
 
 	@Override
 	public boolean isDirty() {
-		if (super.isDirty()) {
+		if (useNativeGraphitiFormat && super.isDirty()) {
 			return true;
 		}
 		return ((SystemDiagramTypeProvider) getDiagramTypeProvider())
-				.getModel().isModified();
+				.getModel().isModified()
+				|| ((SystemDiagramTypeProvider) getDiagramTypeProvider())
+						.getLayoutModel().isModified();
 	}
 
 	@Override

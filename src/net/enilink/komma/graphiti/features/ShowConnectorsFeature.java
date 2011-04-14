@@ -10,8 +10,8 @@ import java.util.Map;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.context.ICustomContext;
+import org.eclipse.graphiti.features.context.impl.AddContext;
 import org.eclipse.graphiti.features.custom.AbstractCustomFeature;
-import org.eclipse.graphiti.mm.algorithms.Ellipse;
 import org.eclipse.graphiti.mm.pictograms.ContainerShape;
 import org.eclipse.graphiti.mm.pictograms.Diagram;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
@@ -22,6 +22,7 @@ import org.eclipse.graphiti.services.IPeService;
 import com.google.inject.Inject;
 
 import net.enilink.komma.graphiti.Styles;
+import net.enilink.komma.graphiti.concepts.Connector;
 import net.enilink.komma.graphiti.service.IDiagramService;
 import net.enilink.komma.graphiti.service.ITypes;
 import net.enilink.komma.core.IReference;
@@ -74,7 +75,7 @@ public class ShowConnectorsFeature extends AbstractCustomFeature {
 			}
 
 			Collection<? extends Shape> children;
-			if (types.isExpanded(nodeShape)) {
+			if (types.isExpanded(pe)) {
 				children = new ArrayList<Shape>(nodeShape.getChildren());
 			} else {
 				Collection<Diagram> diagrams = diagramService
@@ -95,28 +96,17 @@ public class ShowConnectorsFeature extends AbstractCustomFeature {
 				}
 
 				Object bo = getBusinessObjectForPictogramElement(s);
-
 				if (bo instanceof IReference) {
 					Shape connShape = currentConnectors.remove(bo);
 					if (connShape == null) {
-						// we currently have no connector for this item, so we
-						// create one
-						Shape connectorShape = peService.createShape(nodeShape,
-								true);
-						types.designateInterface(connectorShape);
-
-						Ellipse ellipse = gaService
-								.createEllipse(connectorShape);
-						ellipse.setStyle(styles.getStyleForConnector(null));
-
-						peService.createChopboxAnchor(connectorShape);
-
-						// link the newly created shape with it's bo
-						link(connectorShape, bo);
-						// boPe = newShape;
-						connShape = connectorShape;
-
-						toLayout.add((Shape) connShape);
+						AddContext addContext = new AddContext();
+						addContext.setNewObject(new Connector(bo));
+						addContext.setTargetContainer(nodeShape);
+						connShape = (Shape) getFeatureProvider().addIfPossible(
+								addContext);
+						if (connShape != null) {
+							toLayout.add(connShape);
+						}
 					}
 				}
 			}
@@ -131,9 +121,8 @@ public class ShowConnectorsFeature extends AbstractCustomFeature {
 			// now we got all shapes together and need to layout them
 			int currY = 5;
 			for (Shape s : toLayout) {
-				gaService.setLocationAndSize(s.getGraphicsAlgorithm(), 5,
-						currY, 10, 10);
-				currY += 15;
+				gaService.setLocation(s.getGraphicsAlgorithm(), 5, currY);
+				currY += s.getGraphicsAlgorithm().getHeight() + 5;
 			}
 		}
 	}
@@ -145,14 +134,7 @@ public class ShowConnectorsFeature extends AbstractCustomFeature {
 				return false;
 			}
 
-			ContainerShape nodeShape = (ContainerShape) pe;
-			for (Shape shape : nodeShape.getChildren()) {
-				if (shape instanceof ContainerShape) {
-					nodeShape = (ContainerShape) shape;
-				}
-			}
-
-			if (types.isExpanded(nodeShape)) {
+			if (types.isExpanded(pe)) {
 				return true;
 			} else {
 				Collection<Diagram> diagrams = diagramService

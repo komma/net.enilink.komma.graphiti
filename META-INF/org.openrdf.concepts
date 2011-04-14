@@ -1,11 +1,14 @@
 net.enilink.layout.Connection
+net.enilink.layout.ConnectorShape
 net.enilink.layout.Dimension
+net.enilink.layout.ExpandedShape
 net.enilink.layout.Pictogram
 net.enilink.layout.Point
 net.enilink.layout.PointList
 net.enilink.layout.Position
 net.enilink.layout.RelativePosition
 net.enilink.layout.Shape
+net.enilink.layout.ShapeList
 net.enilink.layout.SpatialExtent
 net.enilink.layout.SpatialThing
 net.enilink.layout.Vector

@@ -41,6 +41,7 @@ import net.enilink.komma.common.adapter.IAdapterFactory;
 import net.enilink.komma.concepts.Connection;
 import net.enilink.komma.concepts.IProperty;
 import net.enilink.komma.concepts.IResource;
+import net.enilink.komma.graphiti.concepts.Connector;
 import net.enilink.komma.graphiti.features.CollapseFeature;
 import net.enilink.komma.graphiti.features.DeleteFeature;
 import net.enilink.komma.graphiti.features.DirectEditingFeature;
@@ -49,9 +50,10 @@ import net.enilink.komma.graphiti.features.ExpandFeature;
 import net.enilink.komma.graphiti.features.LayoutNodeFeature;
 import net.enilink.komma.graphiti.features.RemoveFeature;
 import net.enilink.komma.graphiti.features.ShowConnectorsFeature;
-import net.enilink.komma.graphiti.features.UpdateDiagramFeature;
+import net.enilink.komma.graphiti.features.UpdatePictogramsFeature;
 import net.enilink.komma.graphiti.features.UpdateNodeFeature;
 import net.enilink.komma.graphiti.features.add.AddConnectionFeature;
+import net.enilink.komma.graphiti.features.add.AddConnectorFeature;
 import net.enilink.komma.graphiti.features.add.AddNodeFeature;
 import net.enilink.komma.graphiti.features.create.CreateConnectionFeature;
 import net.enilink.komma.graphiti.features.create.CreateNodeFeatureFactory;
@@ -180,6 +182,9 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 		if (newObject instanceof IStatement || newObject instanceof Connection) {
 			return injector.getInstance(AddConnectionFeature.class);
 		}
+		if (newObject instanceof Connector) {
+			return injector.getInstance(AddConnectorFeature.class);
+		}
 		return super.getAddFeature(context);
 	}
 
@@ -228,8 +233,10 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 	@Override
 	public IUpdateFeature getUpdateFeature(IUpdateContext context) {
 		// update diagram according to layout model
-		if (context.getPictogramElement() instanceof Diagram) {
-			return injector.getInstance(UpdateDiagramFeature.class);
+		if (context.getPictogramElement() instanceof Diagram
+				|| Boolean.TRUE
+						.equals(context.getProperty("update.pictograms"))) {
+			return injector.getInstance(UpdatePictogramsFeature.class);
 		}
 
 		Object bo = getBusinessObjectForPictogramElement(context

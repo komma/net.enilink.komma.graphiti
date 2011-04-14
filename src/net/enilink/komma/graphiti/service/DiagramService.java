@@ -91,6 +91,7 @@ public class DiagramService implements IDiagramService {
 					Diagram newDiagram = peService.createDiagram(
 							currentDiagram.getDiagramTypeId(), diagramId,
 							currentDiagram.isSnapToGrid());
+					featureProvider.link(newDiagram, firstUri);
 					currentDiagram.eResource().getContents().add(newDiagram);
 
 					linkedDiagram = newDiagram;

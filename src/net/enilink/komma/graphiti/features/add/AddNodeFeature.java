@@ -136,20 +136,27 @@ public class AddNodeFeature extends AbstractAddShapeFeature implements IQueries 
 	@Override
 	public PictogramElement add(IAddContext context) {
 		ContainerShape targetContainer = context.getTargetContainer();
-		Object bo = diagramService.getFirstBusinessObject(targetContainer);
 
+		boolean updatePictograms = Boolean.TRUE.equals(context
+				.getProperty("update.pictograms"));
+
+		Object bo = null;
 		IReference property = null;
-		if (bo instanceof IReference) {
-			bo = model.resolve((IReference) bo);
-			property = getProperty(model.resolve((IReference) bo),
-					(IEntity) context.getNewObject());
-			if (property == null) {
-				return null;
+		if (!updatePictograms) {
+			bo = diagramService.getFirstBusinessObject(targetContainer);
+
+			if (bo instanceof IReference) {
+				bo = model.resolve((IReference) bo);
+				property = getProperty(model.resolve((IReference) bo),
+						(IEntity) context.getNewObject());
+				if (property == null) {
+					return null;
+				}
 			}
 		}
 
 		IEntity node;
-		if (context.getNewObject() instanceof IClass) {
+		if (!updatePictograms && context.getNewObject() instanceof IClass) {
 			node = model.getManager().createNamed(uriFactory.createURI(),
 					(IReference) context.getNewObject());
 		} else {

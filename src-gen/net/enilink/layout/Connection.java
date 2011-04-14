@@ -12,6 +12,18 @@ public interface Connection extends Pictogram {
 	 * 
 	 * @generated 
 	 */
+	@Iri("http://enilink.net/vocab/layout#decorators")
+	ShapeList getLayoutDecorators();
+	/** 
+	 * 
+	 * @generated 
+	 */
+	void setLayoutDecorators(ShapeList layoutDecorators);
+
+	/** 
+	 * 
+	 * @generated 
+	 */
 	@Iri("http://enilink.net/vocab/layout#end")
 	Object getLayoutEnd();
 	/** 

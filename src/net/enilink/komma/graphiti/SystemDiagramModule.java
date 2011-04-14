@@ -55,6 +55,7 @@ import net.enilink.komma.model.IModel;
 import net.enilink.komma.model.IModelSet;
 import net.enilink.komma.core.URI;
 import net.enilink.komma.core.URIImpl;
+import net.enilink.layout.LAYOUT;
 
 public class SystemDiagramModule extends AbstractModule {
 	private static class URIFactory implements IURIFactory {
@@ -203,8 +204,9 @@ public class SystemDiagramModule extends AbstractModule {
 				.eResource().getURI().appendFileExtension("layout.owl")
 				.toString());
 
-		// TODO add import for layout ontology
-		return loadModel(modelSet, modelUri);
+		IModel model = loadModel(modelSet, modelUri);
+		model.addImport(LAYOUT.NAMESPACE_URI.trimFragment(), "layout");
+		return model;
 	}
 
 	protected IModel loadModel(IModelSet modelSet, URI modelUri) {

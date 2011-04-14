@@ -1,14 +1,12 @@
 package net.enilink.komma.graphiti.features;
 
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.eclipse.draw2d.geometry.Rectangle;
-import org.eclipse.emf.common.util.EList;
-import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.context.ICustomContext;
+import org.eclipse.graphiti.features.context.impl.UpdateContext;
 import org.eclipse.graphiti.features.custom.AbstractCustomFeature;
 import org.eclipse.graphiti.mm.algorithms.GraphicsAlgorithm;
 import org.eclipse.graphiti.mm.algorithms.RoundedRectangle;
@@ -63,10 +61,9 @@ public class ExpandFeature extends AbstractCustomFeature {
 
 			Object bo = getBusinessObjectForPictogramElement(pe);
 			// only allow expanding RDF objects
-			if (bo instanceof IReference)
-				return true;// possibly we might want to check whether this item
-							// has
-							// a subordered diagram?
+			if (bo instanceof IReference) {
+				return true;
+			}
 		}
 
 		return false;
@@ -75,48 +72,34 @@ public class ExpandFeature extends AbstractCustomFeature {
 	@Override
 	public void execute(ICustomContext context) {
 		for (PictogramElement pe : context.getPictogramElements()) {
-			pe = diagramService.getRootOrFirstElementWithBO(pe);
-
-			ContainerShape nodeShape = getNodeShape((ContainerShape) pe);
-			if (types.isExpanded(nodeShape)) {
+			if (types.isExpanded(pe)) {
 				continue;
 			}
-			types.designateExpanded(nodeShape);
+			types.designateExpanded(pe);
+
+			ContainerShape nodeShape = getNodeShape((ContainerShape) diagramService
+					.getRootOrFirstElementWithBO(pe));
+
+			UpdateContext updateContext = new UpdateContext(nodeShape);
+			updateContext.putProperty("update.pictograms", true);
+			getFeatureProvider().updateIfPossible(updateContext);
 
 			Rectangle rect = null;
+			// iterate over newly created elements and determine area
+			for (Shape s : nodeShape.getChildren()) {
+				GraphicsAlgorithm ga = s.getGraphicsAlgorithm();
 
-			Collection<Diagram> diagrams = diagramService.getLinkedDiagrams(pe,
-					false);
-			if (!diagrams.isEmpty()) {
-				Diagram diagram = diagrams.iterator().next();
-				diagram = EcoreUtil.copy(diagram);
-
-				EList<Connection> conns = diagram.getConnections();
-				getDiagram().getConnections().addAll(conns);
-
-				// determine the number of pixels to shift all elements, i.e.
-				// the
-				// smallest x and y coordinates of the contained elements
-				// also determine maximum values
-				for (Shape s : diagram.getChildren()) {
-					GraphicsAlgorithm ga = s.getGraphicsAlgorithm();
-
-					if (rect == null) {
-						rect = new Rectangle(ga.getX(), ga.getY(),
-								ga.getWidth(), ga.getHeight());
-					} else {
-						rect.union(ga.getX(), ga.getY(), ga.getWidth(),
-								ga.getHeight());
-					}
+				if (rect == null) {
+					rect = new Rectangle(ga.getX(), ga.getY(), ga.getWidth(),
+							ga.getHeight());
+				} else {
+					rect.union(ga.getX(), ga.getY(), ga.getWidth(),
+							ga.getHeight());
 				}
-
-				// add all diagram elements to our new container shape
-				nodeShape.getChildren().addAll(diagram.getChildren());
 			}
 
 			// create a new shape which will replace the current
 			GraphicsAlgorithm nodeGA = nodeShape.getGraphicsAlgorithm();
-
 			if (rect == null) {
 				rect = new Rectangle();
 			}
@@ -145,10 +128,6 @@ public class ExpandFeature extends AbstractCustomFeature {
 			rr.setBackground(gaService.manageColor(getDiagram(),
 					new ColorConstant(255, 255, 255)));
 
-			// consider margins when shifting objects
-			int shiftX = rect.x - 15;
-			int shiftY = rect.y - 15;
-
 			List<Shape> connectors = new LinkedList<Shape>();
 			for (Shape child : nodeShape.getChildren()) {
 				if (types.isInterface(child)) {
@@ -157,12 +136,6 @@ public class ExpandFeature extends AbstractCustomFeature {
 					connectors.add(child);
 					continue;
 				}
-
-				GraphicsAlgorithm ga = child.getGraphicsAlgorithm();
-
-				// position child elements
-				ga.setX(ga.getX() - shiftX);
-				ga.setY(ga.getY() - shiftY);
 			}
 
 			// we need to add the children to this diagram first for the
@@ -189,9 +162,6 @@ public class ExpandFeature extends AbstractCustomFeature {
 					}
 				}
 			}
-
-			types.setPoolParameter(nodeShape, SHIFTX_TAG, shiftX);
-			types.setPoolParameter(nodeShape, SHIFTY_TAG, shiftY);
 
 			layoutPictogramElement(pe);
 		}

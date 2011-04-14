@@ -59,7 +59,7 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature
 	}
 
 	protected PictogramElement getContainer(Anchor anchor) {
-		PictogramElement pe = (PictogramElement) anchor.eContainer();
+		PictogramElement pe = anchor.getParent();
 		boolean isInterface = false;
 		if (types.isInterface(pe)) {
 			isInterface = true;
@@ -136,21 +136,21 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature
 
 		if (source != null && target != null) {
 			List<ConnectionContainer> connections = new ArrayList<ConnectionContainer>();
-			
+
 			// query for connection objects between source and target
-//			IExtendedIterator<?> connClassAndProps = source.getKommaManager()
-//					.createQuery(SELECT_APPLICABLE_CONNECTION_OBJECTS)
-//					.setParameter("subject", source)
-//					.setParameter("object", target).evaluate();
-//
-//			while (connClassAndProps.hasNext()) {
-//				Object[] results = (Object[]) connClassAndProps.next();
-//				// expect connection class, source and target properties
-//				if (results.length == 3)
-//					connections.add(new ConnectionContainer(
-//							(IClass) results[0], (IProperty) results[1],
-//							(IProperty) results[2]));
-//			}
+			// IExtendedIterator<?> connClassAndProps = source.getKommaManager()
+			// .createQuery(SELECT_APPLICABLE_CONNECTION_OBJECTS)
+			// .setParameter("subject", source)
+			// .setParameter("object", target).evaluate();
+			//
+			// while (connClassAndProps.hasNext()) {
+			// Object[] results = (Object[]) connClassAndProps.next();
+			// // expect connection class, source and target properties
+			// if (results.length == 3)
+			// connections.add(new ConnectionContainer(
+			// (IClass) results[0], (IProperty) results[1],
+			// (IProperty) results[2]));
+			// }
 
 			// connection objects or plain connections
 			if (!connections.isEmpty()) {
