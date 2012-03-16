@@ -26,8 +26,7 @@ public class CollapseFeature extends ExpandFeature {
 		for (PictogramElement pe : context.getPictogramElements()) {
 			// this is to allow an expanded element to be closed by executing
 			// this feature on its container
-			if (pe instanceof ContainerShape
-					&& types.isExpanded(getNodeShape((ContainerShape) pe))) {
+			if (pe instanceof ContainerShape && types.isExpanded(pe)) {
 				return true;
 			}
 

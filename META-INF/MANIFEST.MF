@@ -27,4 +27,6 @@ Import-Package: com.google.inject;version="2.0.0",
 Bundle-Vendor: %providerName
 Export-Package: net.enilink.komma.graphiti,
  net.enilink.komma.graphiti.features.create,
+ net.enilink.komma.graphiti.graphical,
+ net.enilink.komma.graphiti.service,
  net.enilink.layout

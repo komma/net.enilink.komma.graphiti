@@ -7,6 +7,7 @@ import org.eclipse.graphiti.mm.algorithms.AbstractText;
 import org.eclipse.graphiti.mm.algorithms.GraphicsAlgorithm;
 import org.eclipse.graphiti.mm.algorithms.Rectangle;
 import org.eclipse.graphiti.mm.algorithms.RoundedRectangle;
+import org.eclipse.graphiti.mm.algorithms.styles.Style;
 import org.eclipse.graphiti.mm.pictograms.ContainerShape;
 import org.eclipse.graphiti.mm.pictograms.Diagram;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
@@ -20,12 +21,14 @@ import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 
 import com.google.inject.Inject;
 
+import net.enilink.komma.common.adapter.IAdapterFactory;
 import net.enilink.komma.concepts.IClass;
 import net.enilink.komma.concepts.IProperty;
 import net.enilink.komma.graphiti.Styles;
 import net.enilink.komma.graphiti.SystemGraphicsAlgorithmRendererFactory;
 import net.enilink.komma.graphiti.features.create.IURIFactory;
 import net.enilink.komma.graphiti.features.util.IQueries;
+import net.enilink.komma.graphiti.graphical.IGraphitiProvider;
 import net.enilink.komma.graphiti.service.IDiagramService;
 import net.enilink.komma.graphiti.service.ITypes;
 import net.enilink.komma.model.IModel;
@@ -60,6 +63,9 @@ public class AddNodeFeature extends AbstractAddShapeFeature implements IQueries 
 	IDiagramService diagramService;
 
 	@Inject
+	IAdapterFactory adapterFactory;
+
+	@Inject
 	public AddNodeFeature(IFeatureProvider fp) {
 		super(fp);
 	}
@@ -67,7 +73,9 @@ public class AddNodeFeature extends AbstractAddShapeFeature implements IQueries 
 	@Override
 	public boolean canAdd(IAddContext context) {
 		if (context.getTargetContainer() instanceof Diagram
-				|| types.isExpanded(context.getTargetContainer())) {
+				|| types.isExpanded(diagramService
+						.getRootOrFirstElementWithBO(context
+								.getTargetContainer()))) {
 			if (context.getNewObject() instanceof IEntity) {
 				if (!(context.getNewObject() instanceof IClass)) {
 					return getFeatureProvider()
@@ -167,6 +175,10 @@ public class AddNodeFeature extends AbstractAddShapeFeature implements IQueries 
 			createStatement((IEntity) bo, property, node);
 		}
 
+		// get an IGraphitiNodeFigureProvider from the adapter factory
+		IGraphitiProvider graphitiProvider = (IGraphitiProvider) adapterFactory
+				.adapt(node, IGraphitiProvider.class);
+
 		// CONTAINER SHAPE WITH ROUNDED RECTANGLE
 		final ContainerShape container = peService.createContainerShape(
 				targetContainer, true);
@@ -188,14 +200,27 @@ public class AddNodeFeature extends AbstractAddShapeFeature implements IQueries 
 				context.getY(), width, height);
 
 		{
-			RoundedRectangle roundedRectangle = gaService
-					.createRoundedRectangle(nodeShape, 15, 15);
-			roundedRectangle.setStyle(styles.getStyleForNode(null));
+			GraphicsAlgorithm nodeVis = null;
+
+			// try to get a default node visualization from the graphiti
+			// provider
+			if (graphitiProvider != null) {
+				nodeVis = graphitiProvider.getNodeShape(node, gaService,
+						nodeShape, diagramService.getTopLevelDiagram());
+			}
+
+			// default node visualization
+			if (nodeVis == null) {
+				nodeVis = gaService.createRoundedRectangle(nodeShape, 15, 15);
+
+				nodeVis.setStyle(styles.getStyleForNode(null));
+			}
 
 			// create and set graphics algorithm
-			GraphicsAlgorithm ga = gaService.createPlatformGraphicsAlgorithm(
-					roundedRectangle,
-					SystemGraphicsAlgorithmRendererFactory.NODE_FIGURE);
+			GraphicsAlgorithm ga = gaService
+					.createPlatformGraphicsAlgorithm(nodeVis,
+							SystemGraphicsAlgorithmRendererFactory.NODE_FIGURE);
+
 		}
 
 		// SHAPE WITH TEXT
@@ -204,7 +229,7 @@ public class AddNodeFeature extends AbstractAddShapeFeature implements IQueries 
 			Shape shape = peService.createShape(container, false);
 
 			// create and set text graphics algorithm
-			AbstractText text = gaService.createDefaultMultiText(getDiagram(),
+			AbstractText text = gaService.createDefaultMultiText(
 					shape, labelProvider.getText(node));
 
 			text.setStyle(styles.getStyleForNodeText(null));

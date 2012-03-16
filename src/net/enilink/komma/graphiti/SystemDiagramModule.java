@@ -145,8 +145,8 @@ public class SystemDiagramModule extends AbstractModule {
 	protected IProxyService provideProxyService() {
 		BundleContext bundleContext = FrameworkUtil.getBundle(this.getClass())
 				.getBundleContext();
-		ServiceReference<IProxyService> serviceRef = bundleContext
-				.getServiceReference(IProxyService.class);
+		ServiceReference serviceRef = bundleContext
+				.getServiceReference(IProxyService.class.getName());
 		if (serviceRef != null) {
 			return (IProxyService) bundleContext.getService(serviceRef);
 		}

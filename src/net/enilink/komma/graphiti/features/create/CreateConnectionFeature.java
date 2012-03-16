@@ -20,10 +20,12 @@ import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 
 import com.google.inject.Inject;
 
+import net.enilink.komma.common.adapter.IAdapterFactory;
 import net.enilink.komma.concepts.IClass;
 import net.enilink.komma.concepts.IProperty;
 import net.enilink.komma.concepts.IResource;
 import net.enilink.komma.graphiti.features.util.IQueries;
+import net.enilink.komma.graphiti.graphical.IGraphitiProvider;
 import net.enilink.komma.graphiti.service.IDiagramService;
 import net.enilink.komma.graphiti.service.ITypes;
 import net.enilink.komma.model.IModel;
@@ -51,6 +53,9 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature
 
 	@Inject
 	ILabelProvider labelProvider;
+
+	@Inject
+	IAdapterFactory adapterFactory;
 
 	@Inject
 	public CreateConnectionFeature(IFeatureProvider fp) {
@@ -192,12 +197,26 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature
 						.addIfPossible(addContext);
 
 			} else {
+
+				// get an IGraphitiNodeFigureProvider from the adapter factory
+				IGraphitiProvider graphitiProvider = (IGraphitiProvider) adapterFactory
+						.adapt(source, IGraphitiProvider.class);
+
+				List<IProperty> properties = null;
+
+				// query graphitiProvider for supported connections
+				if (graphitiProvider != null)
+					properties = graphitiProvider.getSupportedConnections(
+							source, target);
+
 				// plain
-				List<IProperty> properties = source.getEntityManager()
-						.createQuery(SELECT_APPLICABLE_CONNECTION_PROPERTIES)
-						.setParameter("subject", source)
-						.setParameter("object", target)
-						.evaluate(IProperty.class).toList();
+				if (properties == null) {
+					properties = source.getEntityManager()
+							.createQuery(SELECT_APPLICABLE_CONNECTION_PROPERTIES)
+							.setParameter("subject", source)
+							.setParameter("object", target)
+							.evaluate(IProperty.class).toList();
+				}
 
 				if (properties.isEmpty()) {
 					return null;

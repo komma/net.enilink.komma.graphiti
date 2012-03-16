@@ -44,7 +44,7 @@ public class ModelSetManager {
 				MODELS.NAMESPACE_URI.appendFragment("OwlimModelSet"), //
 				MODELS.NAMESPACE_URI.appendFragment("ProjectModelSet") //
 				);
-
+		
 		if (modelSet instanceof IProjectModelSet && project != null) {
 			((IProjectModelSet) modelSet).setProject(project);
 		}

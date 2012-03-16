@@ -19,8 +19,10 @@ import org.eclipse.graphiti.platform.ga.IRendererContext;
 
 import com.google.inject.Inject;
 
+import net.enilink.komma.common.adapter.IAdapterFactory;
 import net.enilink.komma.concepts.IClass;
 import net.enilink.komma.concepts.IResource;
+import net.enilink.komma.graphiti.graphical.IGraphitiProvider;
 import net.enilink.komma.graphiti.graphical.NodeFigure;
 import net.enilink.komma.graphiti.service.IDiagramService;
 
@@ -30,6 +32,9 @@ public class SystemGraphicsAlgorithmRendererFactory implements
 
 	@Inject
 	IFeatureProvider fp;
+
+	@Inject
+	IAdapterFactory adapterFactory;
 
 	@Inject
 	IDiagramService diagramService;
@@ -53,6 +58,18 @@ public class SystemGraphicsAlgorithmRendererFactory implements
 
 		Object bo = diagramService.getFirstBusinessObject(ga);
 		if (bo instanceof IResource) {
+			// get an IGraphitiNodeFigureProvider from the adapter factory
+			IGraphitiProvider graphitiProvider = (IGraphitiProvider) adapterFactory
+					.adapt(bo, IGraphitiProvider.class);
+
+			// return if graphitiProvider exists and returns a node figure
+			if (graphitiProvider != null) {
+				NodeFigure figure = graphitiProvider.getNodeFigure((IResource) bo);
+				if (figure != null)
+					return figure;
+			}
+
+			// otherwise try to find image annotation in the objects classes
 			Set<Object> seen = new HashSet<Object>();
 			Queue<IClass> queue = new LinkedList<IClass>(((IResource) bo)
 					.getDirectNamedClasses().toList());
@@ -71,6 +88,7 @@ public class SystemGraphicsAlgorithmRendererFactory implements
 			}
 
 			if (imageURI != null) {
+				// FIXME: remove proxy settings here
 				if (proxyService != null) {
 					IProxyData[] proxyDataForHost = proxyService
 							.select(imageURI);
