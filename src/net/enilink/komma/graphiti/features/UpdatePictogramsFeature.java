@@ -6,6 +6,23 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import net.enilink.komma.core.IQuery;
+import net.enilink.komma.core.IReference;
+import net.enilink.komma.core.Statement;
+import net.enilink.komma.graphiti.concepts.Connector;
+import net.enilink.komma.graphiti.layout.ILayoutConstants;
+import net.enilink.komma.graphiti.service.IDiagramService;
+import net.enilink.komma.model.IModel;
+import net.enilink.vocab.rdf.RDF;
+import net.enilink.vocab.visualization.layout.Connection;
+import net.enilink.vocab.visualization.layout.ConnectorShape;
+import net.enilink.vocab.visualization.layout.Dimension;
+import net.enilink.vocab.visualization.layout.ExpandedShape;
+import net.enilink.vocab.visualization.layout.Pictogram;
+import net.enilink.vocab.visualization.layout.Point;
+import net.enilink.vocab.visualization.layout.Position;
+import net.enilink.vocab.visualization.layout.Shape;
+
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.IReason;
 import org.eclipse.graphiti.features.context.IUpdateContext;
@@ -26,23 +43,6 @@ import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.name.Named;
-
-import net.enilink.vocab.rdf.RDF;
-import net.enilink.komma.graphiti.concepts.Connector;
-import net.enilink.komma.graphiti.layout.ILayoutConstants;
-import net.enilink.komma.graphiti.service.IDiagramService;
-import net.enilink.komma.model.IModel;
-import net.enilink.komma.core.IQuery;
-import net.enilink.komma.core.IReference;
-import net.enilink.komma.core.Statement;
-import net.enilink.layout.Connection;
-import net.enilink.layout.ConnectorShape;
-import net.enilink.layout.Dimension;
-import net.enilink.layout.ExpandedShape;
-import net.enilink.layout.Pictogram;
-import net.enilink.layout.Point;
-import net.enilink.layout.Position;
-import net.enilink.layout.Shape;
 
 public class UpdatePictogramsFeature extends AbstractUpdateFeature implements
 		ILayoutConstants {
@@ -205,7 +205,7 @@ public class UpdatePictogramsFeature extends AbstractUpdateFeature implements
 	public boolean update(IUpdateContext context) {
 		IQuery<?> query = layoutModel.getManager().createQuery(
 				PREFIX
-						+ "SELECT ?p WHERE {" //
+						+ "SELECT DISTINCT ?p WHERE {" //
 						+ "?p a layout:Pictogram . "
 						+ "?p layout:context ?context . " //
 						+ "} ORDER BY ?p DESC (?p)");

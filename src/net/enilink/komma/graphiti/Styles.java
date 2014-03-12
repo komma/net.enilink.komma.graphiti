@@ -2,6 +2,8 @@ package net.enilink.komma.graphiti;
 
 import java.util.Collection;
 
+import net.enilink.komma.graphiti.service.IDiagramService;
+
 import org.eclipse.graphiti.mm.StyleContainer;
 import org.eclipse.graphiti.mm.algorithms.styles.Style;
 import org.eclipse.graphiti.mm.pictograms.Diagram;
@@ -11,8 +13,6 @@ import org.eclipse.graphiti.util.IColorConstant;
 import org.eclipse.graphiti.util.PredefinedColoredAreas;
 
 import com.google.inject.Inject;
-
-import net.enilink.komma.graphiti.service.IDiagramService;
 
 public class Styles {
 

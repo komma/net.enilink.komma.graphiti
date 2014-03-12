@@ -4,6 +4,8 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
 
+import net.enilink.komma.graphiti.IKommaDiagramImages;
+
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.context.ICustomContext;
 import org.eclipse.graphiti.mm.algorithms.GraphicsAlgorithm;
@@ -24,6 +26,7 @@ public class CollapseFeature extends ExpandFeature {
 	@Override
 	public boolean canExecute(ICustomContext context) {
 		for (PictogramElement pe : context.getPictogramElements()) {
+			pe = diagramService.getRootOrFirstElementWithBO(pe);
 			// this is to allow an expanded element to be closed by executing
 			// this feature on its container
 			if (pe instanceof ContainerShape && types.isExpanded(pe)) {
@@ -92,7 +95,6 @@ public class CollapseFeature extends ExpandFeature {
 	public void execute(ICustomContext context) {
 		for (PictogramElement pe : context.getPictogramElements()) {
 			pe = diagramService.getRootOrFirstElementWithBO(pe);
-
 			if (types.isExpanded(pe)) {
 				collapse((ContainerShape) pe);
 				types.removeExpanded(pe);// must no longer be marked as
@@ -110,5 +112,9 @@ public class CollapseFeature extends ExpandFeature {
 	public String getName() {
 		return "Collapse";
 	}
-
+	
+	@Override
+	public String getImageId() {
+		return IKommaDiagramImages.COLLAPSE_IMG;
+	}
 }

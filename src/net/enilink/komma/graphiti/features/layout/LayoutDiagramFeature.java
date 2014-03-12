@@ -4,6 +4,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.enilink.komma.graphiti.IKommaDiagramImages;
+import net.enilink.komma.graphiti.service.IDiagramService;
+
 import org.eclipse.draw2d.geometry.Insets;
 import org.eclipse.draw2d.geometry.PointList;
 import org.eclipse.draw2d.graph.CompoundDirectedGraph;
@@ -28,8 +31,6 @@ import org.eclipse.graphiti.mm.pictograms.Shape;
 
 import com.google.inject.Inject;
 
-import net.enilink.komma.graphiti.service.IDiagramService;
-
 /**
  * Maps the Graphiti Diagram to a graph structure which can be consumed by the
  * GEF Layouter, layouts the graph structure and maps the new coordinates back
@@ -41,7 +42,7 @@ import net.enilink.komma.graphiti.service.IDiagramService;
  * not consider bendpoints etc.
  * 
  */
-public class AutoLayoutDiagramFeature extends AbstractCustomFeature {
+public class LayoutDiagramFeature extends AbstractCustomFeature {
 
 	/**
 	 * Minimal distance between nodes.
@@ -52,7 +53,7 @@ public class AutoLayoutDiagramFeature extends AbstractCustomFeature {
 	IDiagramService diagramService;
 
 	@Inject
-	public AutoLayoutDiagramFeature(IFeatureProvider fp) {
+	public LayoutDiagramFeature(IFeatureProvider fp) {
 		super(fp);
 	}
 
@@ -63,7 +64,7 @@ public class AutoLayoutDiagramFeature extends AbstractCustomFeature {
 
 	@Override
 	public String getName() {
-		return "&Layout Diagram"; //$NON-NLS-1$
+		return "Layout Diagram"; //$NON-NLS-1$
 	}
 
 	@Override
@@ -166,6 +167,11 @@ public class AutoLayoutDiagramFeature extends AbstractCustomFeature {
 			pe = (PictogramElement) pe.eContainer();
 		}
 		return null;
+	}
+
+	@Override
+	public String getImageId() {
+		return IKommaDiagramImages.LAYOUT_IMG;
 	}
 
 }

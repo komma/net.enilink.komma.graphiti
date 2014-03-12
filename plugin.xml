@@ -4,7 +4,7 @@
 
 	<extension point="org.eclipse.graphiti.ui.diagramTypes">
 		<diagramType
-			id="de.fhg.iwu.komma.graphiti.test.TestDiagramType"
+			id="net.enilink.komma.graphiti.test.TestDiagramType"
 			type="graphitiTest"
 			name="KOMMA Graphiti Test Diagram"
 			description="This is a diagram type to evaluate and test Graphiti features for use in the KOMMA framework">
@@ -13,12 +13,12 @@
 	
 	<extension point="org.eclipse.graphiti.ui.diagramTypeProviders">
 		<diagramTypeProvider
-			id="de.fhg.iwu.komma.graphiti.test.TestDiagramTypeProvider"
+			id="net.enilink.komma.graphiti.test.TestDiagramTypeProvider"
 			name="KOMMA Test Editor"
-			class="net.enilink.komma.graphiti.SystemDiagramTypeProvider"
+			class="net.enilink.komma.graphiti.KommaDiagramTypeProvider"
 			description="This is a test Graphiti editor for use in the KOMMA framework">
 			<diagramType
-				id="de.fhg.iwu.komma.graphiti.test.TestDiagramType">
+				id="net.enilink.komma.graphiti.test.TestDiagramType">
 			</diagramType>
 		</diagramTypeProvider>
 	</extension>
@@ -26,26 +26,24 @@
 	<extension
          point="org.eclipse.ui.editors">
  	  <editor
-          class="net.enilink.komma.graphiti.SystemDiagramEditor"
+          class="net.enilink.komma.graphiti.KommaDiagramEditor"
           contributorClass="org.eclipse.graphiti.ui.editor.DiagramEditorActionBarContributor"
           default="true"
-          extensions="diagram"
+          extensions="diaowl, diattl, diardf, diaemf"
           icon="icons/diagram.gif"
-          id="de.fhg.iwu.komma.graphiti.test.SystemDiagramEditor"
-          matchingStrategy="org.eclipse.graphiti.ui.editor.DiagramEditorFactory$DiagramEditorMatchingStrategy"
+          id="net.enilink.komma.graphiti.KommaDiagramEditor"
+          matchingStrategy="org.eclipse.graphiti.ui.editor.DiagramEditorMatchingStrategy"
           name="%_diagram_editor_name">
-       <contentTypeBinding
-             contentTypeId="org.eclipse.graphiti.content.diagram">
-       </contentTypeBinding>
       </editor>
    </extension>
-   
-   <extension
-         point="net.enilink.komma.model.uriMapRules">
-      <rule
-            pattern="http://enilink.net/vocab/layout"
-            priority="30"
-            replacement="platform:/plugin/net.enilink.komma.graphiti/META-INF/ontologies/layout">
-      </rule>
-   </extension>
+ <extension
+       point="org.eclipse.graphiti.ui.imageProviders">
+    <imageProvider
+          class="net.enilink.komma.graphiti.ImageProvider"
+          id="net.enilink.komma.graphiti.imageProvider">
+       <diagramTypeProvider
+             id="net.enilink.komma.graphiti.test.TestDiagramTypeProvider">
+       </diagramTypeProvider>
+    </imageProvider>
+ </extension>
 </plugin>

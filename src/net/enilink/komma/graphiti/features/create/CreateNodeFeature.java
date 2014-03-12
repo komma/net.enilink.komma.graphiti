@@ -1,14 +1,14 @@
 package net.enilink.komma.graphiti.features.create;
 
+import net.enilink.komma.core.IReference;
+import net.enilink.komma.model.IModel;
+
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.context.ICreateContext;
 import org.eclipse.graphiti.features.impl.AbstractCreateFeature;
 
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
-
-import net.enilink.komma.model.IModel;
-import net.enilink.komma.core.IReference;
 
 public class CreateNodeFeature extends AbstractCreateFeature {
 	@Inject

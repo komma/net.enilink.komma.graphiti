@@ -2,8 +2,33 @@ package net.enilink.komma.graphiti;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
+import net.enilink.komma.common.adapter.IAdapterFactory;
+import net.enilink.komma.core.IEntity;
+import net.enilink.komma.core.IStatement;
+import net.enilink.komma.em.concepts.IProperty;
+import net.enilink.komma.em.concepts.IResource;
+import net.enilink.komma.graphiti.concepts.Connector;
+import net.enilink.komma.graphiti.features.CollapseFeature;
+import net.enilink.komma.graphiti.features.DeleteFeature;
+import net.enilink.komma.graphiti.features.DirectEditingFeature;
+import net.enilink.komma.graphiti.features.DrillDownFeature;
+import net.enilink.komma.graphiti.features.ExpandFeature;
+import net.enilink.komma.graphiti.features.LayoutNodeFeature;
+import net.enilink.komma.graphiti.features.RemoveFeature;
+import net.enilink.komma.graphiti.features.ShowConnectorsFeature;
+import net.enilink.komma.graphiti.features.UpdateNodeFeature;
+import net.enilink.komma.graphiti.features.UpdatePictogramsFeature;
+import net.enilink.komma.graphiti.features.add.AddConnectionFeature;
+import net.enilink.komma.graphiti.features.add.AddConnectorFeature;
+import net.enilink.komma.graphiti.features.add.AddNodeFeature;
+import net.enilink.komma.graphiti.features.create.CreateConnectionFeature;
+import net.enilink.komma.graphiti.features.create.CreateNodeFeatureFactory;
+import net.enilink.komma.graphiti.features.layout.LayoutDiagramFeature;
+import net.enilink.komma.graphiti.service.IDiagramService;
+import net.enilink.komma.graphiti.service.ITypes;
+import net.enilink.komma.model.IModel;
+import net.enilink.vocab.visualization.layout.Connection;
 
 import org.eclipse.graphiti.dt.IDiagramTypeProvider;
 import org.eclipse.graphiti.features.IAddFeature;
@@ -36,39 +61,9 @@ import org.eclipse.graphiti.ui.features.DefaultFeatureProvider;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.google.inject.Provider;
 
-import net.enilink.komma.common.adapter.IAdapterFactory;
-import net.enilink.komma.concepts.Connection;
-import net.enilink.komma.concepts.IProperty;
-import net.enilink.komma.concepts.IResource;
-import net.enilink.komma.graphiti.concepts.Connector;
-import net.enilink.komma.graphiti.features.CollapseFeature;
-import net.enilink.komma.graphiti.features.DeleteFeature;
-import net.enilink.komma.graphiti.features.DirectEditingFeature;
-import net.enilink.komma.graphiti.features.DrillDownFeature;
-import net.enilink.komma.graphiti.features.ExpandFeature;
-import net.enilink.komma.graphiti.features.LayoutNodeFeature;
-import net.enilink.komma.graphiti.features.RemoveFeature;
-import net.enilink.komma.graphiti.features.ShowConnectorsFeature;
-import net.enilink.komma.graphiti.features.UpdatePictogramsFeature;
-import net.enilink.komma.graphiti.features.UpdateNodeFeature;
-import net.enilink.komma.graphiti.features.add.AddConnectionFeature;
-import net.enilink.komma.graphiti.features.add.AddConnectorFeature;
-import net.enilink.komma.graphiti.features.add.AddNodeFeature;
-import net.enilink.komma.graphiti.features.create.CreateConnectionFeature;
-import net.enilink.komma.graphiti.features.create.CreateNodeFeatureFactory;
-import net.enilink.komma.graphiti.features.layout.AutoLayoutDiagramFeature;
-import net.enilink.komma.graphiti.service.IDiagramService;
-import net.enilink.komma.graphiti.service.ITypes;
-import net.enilink.komma.model.IModel;
-import net.enilink.komma.core.IEntity;
-import net.enilink.komma.core.IReference;
-import net.enilink.komma.core.IStatement;
-import net.enilink.komma.core.Statement;
-import net.enilink.komma.core.URI;
-import net.enilink.komma.core.URIImpl;
-
-public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
+public class KommaDiagramFeatureProvider extends DefaultFeatureProvider {
 	@Inject
 	Injector injector;
 
@@ -82,51 +77,13 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 	ITypes typeService;
 
 	@Inject
-	public SystemDiagramFeatureProvider(IDiagramTypeProvider dtp) {
+	Provider<IDiagramService> diagramService;
+
+	@Inject
+	public KommaDiagramFeatureProvider(IDiagramTypeProvider dtp,
+			IIndependenceSolver independenceSolver) {
 		super(dtp);
-
-		setIndependenceSolver(new IIndependenceSolver() {
-			@Override
-			public String getKeyForBusinessObject(Object bo) {
-				if (bo instanceof IStatement) {
-					IStatement stmt = (IStatement) bo;
-					return "[" + getKeyForBusinessObject(stmt.getSubject())
-							+ ","
-							+ getKeyForBusinessObject(stmt.getPredicate())
-							+ "," + getKeyForBusinessObject(stmt.getObject())
-							+ "]";
-				} else if (bo instanceof IReference) {
-					URI uri = ((IReference) bo).getURI();
-					if (uri != null) {
-						return uri.toString();
-					}
-				}
-				// unknown object
-				return null;
-
-			}
-
-			@Override
-			public Object getBusinessObjectForKey(String key) {
-				if (key.startsWith("[")) {
-					Matcher matcher = Pattern.compile("\\[(.*),(.*),(.*)\\]")
-							.matcher(key);
-					if (matcher.matches()) {
-						return new Statement(
-								URIImpl.createURI(matcher.group(1)),
-								URIImpl.createURI(matcher.group(2)),
-								URIImpl.createURI(matcher.group(3)));
-					}
-					return null;
-				}
-				try {
-					URI uri = URIImpl.createURI(key);
-					return model.resolve(uri);
-				} catch (Exception e) {
-					return null;
-				}
-			}
-		});
+		setIndependenceSolver(independenceSolver);
 	}
 
 	/**
@@ -186,6 +143,13 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 			return injector.getInstance(AddConnectorFeature.class);
 		}
 		return super.getAddFeature(context);
+	}
+
+	@Override
+	public Object getBusinessObjectForPictogramElement(
+			PictogramElement pictogramElement) {
+		return diagramService.get().getBusinessObjectForPictogramElement(
+				pictogramElement);
 	}
 
 	@Override
@@ -280,6 +244,7 @@ public class SystemDiagramFeatureProvider extends DefaultFeatureProvider {
 				injector.getInstance(ExpandFeature.class),
 				injector.getInstance(CollapseFeature.class),
 				injector.getInstance(ShowConnectorsFeature.class),
-				injector.getInstance(AutoLayoutDiagramFeature.class) };
+				injector.getInstance(LayoutDiagramFeature.class)
+		};
 	}
 }

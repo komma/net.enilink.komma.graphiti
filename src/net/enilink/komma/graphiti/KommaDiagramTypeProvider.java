@@ -1,10 +1,30 @@
 package net.enilink.komma.graphiti;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
+import net.enilink.komma.common.command.CommandResult;
+import net.enilink.komma.common.command.SimpleCommand;
+import net.enilink.komma.common.notify.INotification;
+import net.enilink.komma.common.notify.INotificationListener;
+import net.enilink.komma.common.notify.NotificationFilter;
+import net.enilink.komma.core.IReference;
+import net.enilink.komma.core.IStatement;
+import net.enilink.komma.core.IValue;
+import net.enilink.komma.edit.domain.IEditingDomain;
+import net.enilink.komma.edit.domain.IEditingDomainProvider;
+import net.enilink.komma.edit.ui.editor.KommaEditorSupport;
+import net.enilink.komma.edit.ui.rcp.project.ProjectModelSetManager;
+import net.enilink.komma.graphiti.layout.LayoutSynchronizer;
+import net.enilink.komma.graphiti.service.IDiagramService;
+import net.enilink.komma.model.IModel;
+import net.enilink.komma.model.IModelSet;
+
 import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IAdapterFactory;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -18,19 +38,16 @@ import org.eclipse.emf.transaction.ResourceSetChangeEvent;
 import org.eclipse.emf.transaction.ResourceSetListenerImpl;
 import org.eclipse.gef.EditPart;
 import org.eclipse.graphiti.dt.AbstractDiagramTypeProvider;
-import org.eclipse.graphiti.dt.IDiagramTypeProvider;
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.mm.algorithms.GraphicsAlgorithm;
+import org.eclipse.graphiti.mm.pictograms.Anchor;
 import org.eclipse.graphiti.mm.pictograms.Connection;
 import org.eclipse.graphiti.mm.pictograms.Diagram;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
-import org.eclipse.graphiti.platform.IDiagramEditor;
+import org.eclipse.graphiti.mm.pictograms.PictogramsPackage;
+import org.eclipse.graphiti.platform.IDiagramBehavior;
 import org.eclipse.graphiti.platform.ga.IGraphicsAlgorithmRendererFactory;
 import org.eclipse.graphiti.tb.IToolBehaviorProvider;
-import org.eclipse.ui.IEditorPart;
-import org.eclipse.ui.IEditorReference;
-import org.eclipse.ui.IWorkbenchPage;
-import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.progress.UIJob;
 
 import com.google.inject.Guice;
@@ -38,26 +55,7 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
 
-import net.enilink.komma.KommaCore;
-import net.enilink.komma.common.command.CommandResult;
-import net.enilink.komma.common.command.SimpleCommand;
-import net.enilink.komma.common.notify.INotification;
-import net.enilink.komma.common.notify.INotificationListener;
-import net.enilink.komma.common.notify.NotificationFilter;
-import net.enilink.komma.edit.domain.IEditingDomain;
-import net.enilink.komma.edit.domain.IEditingDomainProvider;
-import net.enilink.komma.edit.ui.editor.KommaEditorSupport;
-import net.enilink.komma.graphiti.layout.LayoutSynchronizer;
-import net.enilink.komma.graphiti.model.ModelSetManager;
-import net.enilink.komma.model.IModel;
-import net.enilink.komma.model.IModelSet;
-import net.enilink.komma.core.IReference;
-import net.enilink.komma.core.IStatement;
-import net.enilink.komma.core.IValue;
-import net.enilink.komma.core.URI;
-import net.enilink.komma.core.URIImpl;
-
-public class SystemDiagramTypeProvider extends AbstractDiagramTypeProvider
+public class KommaDiagramTypeProvider extends AbstractDiagramTypeProvider
 		implements IEditingDomainProvider {
 	private Injector injector;
 	private IAdapterFactory platformAdapterFactory;
@@ -98,23 +96,12 @@ public class SystemDiagramTypeProvider extends AbstractDiagramTypeProvider
 	};
 
 	@Override
-	public void init(Diagram diagram, IDiagramEditor diagramEditor) {
+	public void init(Diagram diagram, IDiagramBehavior diagramEditor) {
 		super.init(diagram, diagramEditor);
 
-		injector = Guice.createInjector(new SystemDiagramModule(this) {
-			protected IModelSet provideModelSet(
-					IDiagramTypeProvider diagramTypeProvider,
-					ModelSetManager modelSetManager) {
-				IModelSet sharedModelSet = getSharedModelSet();
-				if (sharedModelSet != null) {
-					return sharedModelSet;
-				}
-				return super.provideModelSet(diagramTypeProvider,
-						modelSetManager);
-			}
-
-		});
-
+		IProject project = ((KommaDiagramEditor) diagramEditor
+				.getDiagramContainer()).getProject();
+		injector = Guice.createInjector(new KommaDiagramModule(project, this));
 		setFeatureProvider(injector.getInstance(IFeatureProvider.class));
 		platformAdapterFactory = new IAdapterFactory() {
 			@Override
@@ -146,6 +133,8 @@ public class SystemDiagramTypeProvider extends AbstractDiagramTypeProvider
 		IModelSet modelSet = injector.getInstance(IModelSet.class);
 		modelSet.addListener(notificationListener);
 
+		final IDiagramService diagramService = injector
+				.getInstance(IDiagramService.class);
 		diagramEditor.getEditingDomain().addResourceSetListener(
 				new ResourceSetListenerImpl() {
 					LayoutSynchronizer layoutSynchronizer = new LayoutSynchronizer(
@@ -154,8 +143,33 @@ public class SystemDiagramTypeProvider extends AbstractDiagramTypeProvider
 						injector.injectMembers(layoutSynchronizer);
 					}
 
+					EStructuralFeature startFeature = PictogramsPackage.eINSTANCE
+							.getConnection_Start(),
+							endFeature = PictogramsPackage.eINSTANCE
+									.getConnection_End(),
+							containerFeature = PictogramsPackage.eINSTANCE
+									.getShape_Container(),
+							parentFeature = PictogramsPackage.eINSTANCE
+									.getAnchor_Parent();
+
+					Object getBusinessObject(PictogramElement pe) {
+						Object bo = getFeatureProvider()
+								.getBusinessObjectForPictogramElement(pe);
+						// restrict business objects to RDF resources or
+						// statements
+						return bo instanceof IReference
+								|| bo instanceof IStatement ? bo : null;
+					}
+
+					class ConnectionInfo {
+						PictogramElement start, end;
+					}
+
 					@Override
 					public void resourceSetChanged(ResourceSetChangeEvent event) {
+						Set<PictogramElement> deletedShapes = new HashSet<>();
+						Map<Connection, ConnectionInfo> deletedConnections = new HashMap<>();
+						final Map<PictogramElement, PictogramElement> parentMap = new HashMap<>();
 						for (Notification notification : event
 								.getNotifications()) {
 							Object notifier = notification.getNotifier();
@@ -164,27 +178,53 @@ public class SystemDiagramTypeProvider extends AbstractDiagramTypeProvider
 							}
 
 							EObject eo = (EObject) notifier;
-							// do not work with dangling objects
-							if (eo == null || eo.eResource() == null) {
-								continue;
-							}
-
 							if (!(notification.getFeature() instanceof EStructuralFeature)) {
 								continue;
 							}
 							EStructuralFeature feature = (EStructuralFeature) notification
 									.getFeature();
 
+							if (eo.eResource() == null) {
+								if (eo instanceof Connection) {
+									ConnectionInfo conn = deletedConnections
+											.get(eo);
+									if (conn == null) {
+										conn = new ConnectionInfo();
+										deletedConnections.put((Connection) eo,
+												conn);
+									}
+									if (startFeature.equals(feature)) {
+										conn.start = (PictogramElement) notification
+												.getOldValue();
+									} else if (endFeature.equals(feature)) {
+										conn.end = (PictogramElement) notification
+												.getOldValue();
+									}
+								} else if (eo instanceof PictogramElement
+										&& containerFeature.equals(feature)) {
+									parentMap.put((PictogramElement) eo,
+											(PictogramElement) notification
+													.getOldValue());
+									deletedShapes.add((PictogramElement) eo);
+								} else if (eo instanceof Anchor
+										&& parentFeature.equals(feature)) {
+									parentMap.put((Anchor) eo,
+											(PictogramElement) notification
+													.getOldValue());
+								}
+								continue;
+							}
+
 							if (eo instanceof GraphicsAlgorithm
 									|| eo instanceof Connection) {
-								PictogramElement pe;
+								PictogramElement pe = null;
 								if (eo instanceof Connection) {
 									pe = (Connection) eo;
 									if (((Connection) pe).getStart() == null
 											|| ((Connection) pe).getEnd() == null) {
 										continue;
 									}
-								} else {
+								} else if (eo instanceof GraphicsAlgorithm) {
 									GraphicsAlgorithm ga = (GraphicsAlgorithm) eo;
 									// do only use top-most graphics algorithm
 									if (ga.getParentGraphicsAlgorithm() != null) {
@@ -192,7 +232,6 @@ public class SystemDiagramTypeProvider extends AbstractDiagramTypeProvider
 									}
 									pe = ga.getPictogramElement();
 								}
-
 								if (pe != null) {
 									// unmapped property
 									if (!layoutSynchronizer
@@ -200,28 +239,41 @@ public class SystemDiagramTypeProvider extends AbstractDiagramTypeProvider
 										continue;
 									}
 
-									Object bo = getFeatureProvider()
-											.getBusinessObjectForPictogramElement(
-													pe);
+									Object bo = getBusinessObject(pe);
 									// only synchronize pictogram elements with
 									// business objects
-									if (bo == null
-											|| !(bo instanceof IReference || bo instanceof IStatement)) {
+									if (bo == null) {
 										continue;
 									}
 
-									System.out.println("changed: " + pe
-											+ "\n\tbo: " + bo + "\n\tga: "
-											+ pe.getGraphicsAlgorithm()
-											+ "\n\tfeature: "
-											+ notification.getFeature()
-											+ "\n\tvalue: "
-											+ notification.getNewValue());
+									// System.out.println("changed: " + pe
+									// + "\n\tbo: " + bo + "\n\tga: "
+									// + pe.getGraphicsAlgorithm()
+									// + "\n\tfeature: "
+									// + notification.getFeature()
+									// + "\n\tvalue: "
+									// + notification.getNewValue());
 
 									layoutSynchronizer.addForUpdate(pe,
 											feature, bo);
 								}
 							}
+						}
+
+						// schedule pictogram elements for deletion
+						for (PictogramElement pe : deletedShapes) {
+							Object bo = diagramService
+									.getBusinessObjectForPictogramElement(pe);
+							if (bo instanceof IReference) {
+								layoutSynchronizer.addForDeletion(pe);
+							}
+						}
+
+						for (Map.Entry<Connection, ConnectionInfo> entry : deletedConnections
+								.entrySet()) {
+							ConnectionInfo conn = entry.getValue();
+							layoutSynchronizer.addForDeletion(entry.getKey(),
+									conn.start, conn.end);
 						}
 
 						if (layoutSynchronizer.hasUpdates()) {
@@ -240,15 +292,15 @@ public class SystemDiagramTypeProvider extends AbstractDiagramTypeProvider
 																	IAdaptable info)
 																	throws ExecutionException {
 																layoutSynchronizer
-																		.update(progressMonitor);
+																		.update(parentMap,
+																				progressMonitor);
 																return CommandResult
 																		.newOKCommandResult();
 															}
 														}, null, null);
 									} catch (ExecutionException e) {
-										e.printStackTrace();
 										return new Status(IStatus.ERROR,
-												KommaCore.PLUGIN_ID,
+												KommaGraphitiPlugin.PLUGIN_ID,
 												"Error while updating layout",
 												e);
 									}
@@ -262,33 +314,6 @@ public class SystemDiagramTypeProvider extends AbstractDiagramTypeProvider
 						return true;
 					}
 				});
-	}
-
-	protected IModelSet getSharedModelSet() {
-		// try to use existing model set
-		URI modelUri = URIImpl.createURI(getDiagram().eResource().getURI()
-				.appendFileExtension("owl").toString());
-
-		IWorkbenchPage page = PlatformUI.getWorkbench()
-				.getActiveWorkbenchWindow().getActivePage();
-		if (page != null) {
-			for (IEditorReference editorRef : page.getEditorReferences()) {
-				IEditorPart editor = editorRef.getEditor(false);
-				if (editor instanceof SystemDiagramEditor
-						&& editor != getDiagramEditor()) {
-					IDiagramTypeProvider typeProvider = ((IDiagramEditor) editor)
-							.getDiagramTypeProvider();
-					if (typeProvider instanceof SystemDiagramTypeProvider
-							&& modelUri
-									.equals(((SystemDiagramTypeProvider) typeProvider)
-											.getModel().getURI())) {
-						return ((SystemDiagramTypeProvider) typeProvider)
-								.getModel().getModelSet();
-					}
-				}
-			}
-		}
-		return null;
 	}
 
 	@Override
@@ -319,20 +344,20 @@ public class SystemDiagramTypeProvider extends AbstractDiagramTypeProvider
 			platformAdapterFactory = null;
 		}
 
+		super.dispose();
+
 		IModelSet modelSet = injector.getInstance(IModelSet.class);
 		modelSet.removeListener(notificationListener);
-		if (getSharedModelSet() == null) {
-			// this editor has the only instance of this model set so just
-			// dispose it along with the associated editor support
-			modelSet.dispose();
 
-			KommaEditorSupport<?> editorSupport = injector
-					.getInstance(new Key<KommaEditorSupport<SystemDiagramEditor>>() {
-					});
-			editorSupport.dispose();
-		}
+		KommaEditorSupport<?> editorSupport = injector
+				.getInstance(new Key<KommaEditorSupport<KommaDiagramEditor>>() {
+				});
+		editorSupport.dispose();
 
-		super.dispose();
+		// remove reference to shared model set
+		ProjectModelSetManager modelSetManager = injector
+				.getInstance(ProjectModelSetManager.class);
+		modelSetManager.removeClient(this);
 	}
 
 	@Override
@@ -346,4 +371,5 @@ public class SystemDiagramTypeProvider extends AbstractDiagramTypeProvider
 		// required for automatic diagram generation
 		return true;
 	}
+
 }

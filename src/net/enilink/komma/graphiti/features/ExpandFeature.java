@@ -3,8 +3,14 @@ package net.enilink.komma.graphiti.features;
 import java.util.LinkedList;
 import java.util.List;
 
+import net.enilink.komma.core.IReference;
+import net.enilink.komma.graphiti.IKommaDiagramImages;
+import net.enilink.komma.graphiti.service.IDiagramService;
+import net.enilink.komma.graphiti.service.ITypes;
+
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.graphiti.features.IFeatureProvider;
+import org.eclipse.graphiti.features.context.IContext;
 import org.eclipse.graphiti.features.context.ICustomContext;
 import org.eclipse.graphiti.features.context.impl.UpdateContext;
 import org.eclipse.graphiti.features.custom.AbstractCustomFeature;
@@ -20,10 +26,6 @@ import org.eclipse.graphiti.services.IPeService;
 import org.eclipse.graphiti.util.ColorConstant;
 
 import com.google.inject.Inject;
-
-import net.enilink.komma.graphiti.service.IDiagramService;
-import net.enilink.komma.graphiti.service.ITypes;
-import net.enilink.komma.core.IReference;
 
 public class ExpandFeature extends AbstractCustomFeature {
 	@Inject
@@ -45,6 +47,11 @@ public class ExpandFeature extends AbstractCustomFeature {
 	@Inject
 	public ExpandFeature(IFeatureProvider fp) {
 		super(fp);
+	}
+
+	@Override
+	public boolean isAvailable(IContext context) {
+		return false;
 	}
 
 	@Override
@@ -72,13 +79,13 @@ public class ExpandFeature extends AbstractCustomFeature {
 	@Override
 	public void execute(ICustomContext context) {
 		for (PictogramElement pe : context.getPictogramElements()) {
+			pe = diagramService.getRootOrFirstElementWithBO(pe);
 			if (types.isExpanded(pe)) {
 				continue;
 			}
 			types.designateExpanded(pe);
 
-			ContainerShape nodeShape = getNodeShape((ContainerShape) diagramService
-					.getRootOrFirstElementWithBO(pe));
+			ContainerShape nodeShape = getNodeShape((ContainerShape) pe);
 
 			UpdateContext updateContext = new UpdateContext(nodeShape);
 			updateContext.putProperty("update.pictograms", true);
@@ -139,9 +146,8 @@ public class ExpandFeature extends AbstractCustomFeature {
 			}
 
 			// we need to add the children to this diagram first for the
-			// connection
-			// method to work.
-			// otherwise getPictogramElementForBusinessObject() does not work.
+			// connection method to work. Otherwise
+			// getPictogramElementForBusinessObject() does not work.
 			// so now here we create the connections between connectors and the
 			// instances which they represent
 			for (Shape currShape : connectors) {
@@ -184,5 +190,10 @@ public class ExpandFeature extends AbstractCustomFeature {
 			}
 		}
 		return shape;
+	}
+
+	@Override
+	public String getImageId() {
+		return IKommaDiagramImages.EXPAND_IMG;
 	}
 }

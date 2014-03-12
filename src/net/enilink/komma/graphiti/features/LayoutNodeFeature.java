@@ -18,6 +18,11 @@ package net.enilink.komma.graphiti.features;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import net.enilink.komma.em.concepts.IResource;
+import net.enilink.komma.graphiti.GraphicsAlgorithmRendererFactory;
+import net.enilink.komma.graphiti.service.IDiagramService;
+import net.enilink.komma.graphiti.service.ITypes;
+
 import org.eclipse.graphiti.datatypes.IDimension;
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.context.ILayoutContext;
@@ -31,11 +36,6 @@ import org.eclipse.graphiti.mm.pictograms.Shape;
 import org.eclipse.graphiti.services.IGaService;
 
 import com.google.inject.Inject;
-
-import net.enilink.komma.concepts.IResource;
-import net.enilink.komma.graphiti.SystemGraphicsAlgorithmRendererFactory;
-import net.enilink.komma.graphiti.service.IDiagramService;
-import net.enilink.komma.graphiti.service.ITypes;
 
 /**
  * The Class LayoutPoolFeature.
@@ -122,7 +122,7 @@ public class LayoutNodeFeature extends AbstractLayoutFeature {
 
 			if (childGa instanceof PlatformGraphicsAlgorithm
 					&& ((PlatformGraphicsAlgorithm) childGa).getId().equals(
-							SystemGraphicsAlgorithmRendererFactory.NODE_FIGURE)) {
+							GraphicsAlgorithmRendererFactory.NODE_FIGURE)) {
 				// scale and center image
 				int origWidth = nodeWidth - 2 * IMAGE_PADDING;
 				int origHeight = nodeHeight - 2 * IMAGE_PADDING;

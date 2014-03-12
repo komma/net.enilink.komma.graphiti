@@ -2,15 +2,20 @@ package net.enilink.komma.graphiti.features;
 
 import java.util.Collection;
 
+import net.enilink.komma.core.IReference;
+import net.enilink.komma.graphiti.IKommaDiagramImages;
+import net.enilink.komma.graphiti.KommaDiagramEditor;
+import net.enilink.komma.graphiti.service.IDiagramService;
+
 import org.eclipse.emf.transaction.TransactionalEditingDomain;
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.context.ICustomContext;
 import org.eclipse.graphiti.features.custom.AbstractCustomFeature;
 import org.eclipse.graphiti.mm.pictograms.Diagram;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
-import org.eclipse.graphiti.platform.IDiagramEditor;
 import org.eclipse.graphiti.platform.IPlatformImageConstants;
 import org.eclipse.graphiti.services.IPeService;
+import org.eclipse.graphiti.ui.editor.DiagramEditor;
 import org.eclipse.graphiti.ui.editor.DiagramEditorInput;
 import org.eclipse.graphiti.ui.services.GraphitiUi;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
@@ -25,10 +30,6 @@ import org.eclipse.ui.dialogs.ListDialog;
 import org.eclipse.ui.ide.IDE;
 
 import com.google.inject.Inject;
-
-import net.enilink.komma.graphiti.SystemDiagramEditor;
-import net.enilink.komma.graphiti.service.IDiagramService;
-import net.enilink.komma.core.IReference;
 
 public class DrillDownFeature extends AbstractCustomFeature {
 	private class DiagramLabelProvider extends LabelProvider {
@@ -45,8 +46,9 @@ public class DrillDownFeature extends AbstractCustomFeature {
 		@Override
 		public Image getImage(Object element) {
 			if (this.image == null) {
-				this.image = GraphitiUi.getImageService().getImageForId(
-						IPlatformImageConstants.IMG_DIAGRAM);
+				this.image = GraphitiUi.getImageService()
+						.getPlatformImageForId(
+								IPlatformImageConstants.IMG_DIAGRAM);
 			}
 			return this.image;
 		}
@@ -80,7 +82,8 @@ public class DrillDownFeature extends AbstractCustomFeature {
 		PictogramElement[] pes = context.getPictogramElements();
 		// first check, if one EClass is selected
 		if (pes != null && pes.length == 1) {
-			Object bo = getBusinessObjectForPictogramElement(pes[0]);
+			Object bo = getBusinessObjectForPictogramElement(diagramService
+					.getRootOrFirstElementWithBO(pes[0]));
 			if (bo instanceof IReference) {
 				// // then forward to super-implementation, which checks if
 				// // this EClass is associated with other diagrams
@@ -159,7 +162,7 @@ public class DrillDownFeature extends AbstractCustomFeature {
 
 	protected TransactionalEditingDomain getTransActionalEditingDomainForNewDiagram(
 			Diagram newDiagram) {
-		return getDiagramEditor().getEditingDomain();
+		return getDiagramBehavior().getEditingDomain();
 	}
 
 	/**
@@ -173,25 +176,29 @@ public class DrillDownFeature extends AbstractCustomFeature {
 	 *            be used by the editor.
 	 * @return the editor instance
 	 */
-	public IDiagramEditor openDiagramEditor(Diagram diagram,
+	public DiagramEditor openDiagramEditor(Diagram diagram,
 			TransactionalEditingDomain domain, String providerId,
 			boolean disposeEditingDomain) {
-		IDiagramEditor ret = null;
+		DiagramEditor ret = null;
 		DiagramEditorInput diagramEditorInput = DiagramEditorInput
-				.createEditorInput(diagram, domain, providerId,
-						disposeEditingDomain);
+				.createEditorInput(diagram, providerId);
 		IWorkbenchPage workbenchPage = PlatformUI.getWorkbench()
 				.getActiveWorkbenchWindow().getActivePage();
 		try {
 			IEditorPart editorPart = IDE.openEditor(workbenchPage,
-					diagramEditorInput, SystemDiagramEditor.DIAGRAM_EDITOR_ID);
-			if (editorPart instanceof IDiagramEditor) {
-				ret = (IDiagramEditor) editorPart;
+					diagramEditorInput, KommaDiagramEditor.DIAGRAM_EDITOR_ID);
+			if (editorPart instanceof DiagramEditor) {
+				ret = (DiagramEditor) editorPart;
 			}
 		} catch (PartInitException e) {
 			// $JL-EXC$
 		}
 
 		return ret;
+	}
+
+	@Override
+	public String getImageId() {
+		return IKommaDiagramImages.LINK_IMG;
 	}
 }

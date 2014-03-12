@@ -1,5 +1,7 @@
 package net.enilink.komma.graphiti.dnd;
 
+import net.enilink.komma.edit.ui.dnd.LocalTransfer;
+
 import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gef.Request;
 import org.eclipse.gef.commands.Command;
@@ -9,11 +11,9 @@ import org.eclipse.gef.requests.CreationFactory;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.dnd.DND;
 
-import net.enilink.komma.edit.ui.dnd.LocalTransfer;
-
-public class SystemDiagramDropTargetListener extends
+public class KommaDiagramDropTargetListener extends
 		AbstractTransferDropTargetListener {
-	public SystemDiagramDropTargetListener(EditPartViewer viewer) {
+	public KommaDiagramDropTargetListener(EditPartViewer viewer) {
 		super(viewer, LocalTransfer.getInstance());
 	}
 

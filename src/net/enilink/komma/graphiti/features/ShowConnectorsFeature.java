@@ -7,6 +7,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import net.enilink.komma.core.IReference;
+import net.enilink.komma.graphiti.IKommaDiagramImages;
+import net.enilink.komma.graphiti.Styles;
+import net.enilink.komma.graphiti.concepts.Connector;
+import net.enilink.komma.graphiti.service.IDiagramService;
+import net.enilink.komma.graphiti.service.ITypes;
+
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.context.ICustomContext;
@@ -20,12 +27,6 @@ import org.eclipse.graphiti.services.IGaService;
 import org.eclipse.graphiti.services.IPeService;
 
 import com.google.inject.Inject;
-
-import net.enilink.komma.graphiti.Styles;
-import net.enilink.komma.graphiti.concepts.Connector;
-import net.enilink.komma.graphiti.service.IDiagramService;
-import net.enilink.komma.graphiti.service.ITypes;
-import net.enilink.komma.core.IReference;
 
 public class ShowConnectorsFeature extends AbstractCustomFeature {
 	@Inject
@@ -156,5 +157,10 @@ public class ShowConnectorsFeature extends AbstractCustomFeature {
 	@Override
 	public String getDescription() {
 		return new String("Creates connectors for internal components");
+	}
+
+	@Override
+	public String getImageId() {
+		return IKommaDiagramImages.CONNECTORS_IMG;
 	}
 }

@@ -4,14 +4,18 @@ import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.graphiti.services.IPeService;
 
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 
 public class Types implements ITypes {
 	@Inject
 	IPeService peService;
 
+	@Inject
+	Provider<IDiagramService> diagramService;
+
 	@Override
 	public boolean isInterface(PictogramElement pe) {
-		return peService.getProperty(pe, INTERFACE_TAG) != null;
+		return diagramService.get().getProperty(pe, INTERFACE_TAG) != null;
 	}
 
 	@Override
@@ -21,7 +25,7 @@ public class Types implements ITypes {
 
 	@Override
 	public boolean isExpanded(PictogramElement pe) {
-		return peService.getProperty(pe, EXPANDED_TAG) != null;
+		return diagramService.get().getProperty(pe, EXPANDED_TAG) != null;
 	}
 
 	@Override

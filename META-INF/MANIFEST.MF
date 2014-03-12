@@ -12,10 +12,10 @@ Require-Bundle: org.eclipse.gef,
  org.eclipse.ui.views.properties.tabbed,
  net.enilink.komma.edit.ui,
  net.enilink.komma.workbench,
- org.eclipse.gmf.runtime.draw2d.ui.render,
- org.eclipse.gmf.runtime.draw2d.ui,
  org.eclipse.core.net,
- org.eclipse.emf.workspace
+ org.eclipse.emf.workspace,
+ net.enilink.vocab.visualization.layout,
+ net.enilink.komma.edit.ui.rcp
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: com.google.inject;version="2.0.0",
@@ -23,10 +23,13 @@ Import-Package: com.google.inject;version="2.0.0",
  com.google.inject.binder;version="2.0.0",
  com.google.inject.multibindings;version="2.0.0",
  com.google.inject.name;version="2.0.0",
- org.eclipse.graphiti.dt
+ org.eclipse.graphiti.dt,
+ org.eclipse.gmf.runtime.draw2d.ui.mapmode,
+ org.eclipse.gmf.runtime.draw2d.ui.render,
+ org.eclipse.gmf.runtime.draw2d.ui.render.factory,
+ org.eclipse.gmf.runtime.draw2d.ui.render.figures
 Bundle-Vendor: %providerName
 Export-Package: net.enilink.komma.graphiti,
  net.enilink.komma.graphiti.features.create,
  net.enilink.komma.graphiti.graphical,
- net.enilink.komma.graphiti.service,
- net.enilink.layout
+ net.enilink.komma.graphiti.service

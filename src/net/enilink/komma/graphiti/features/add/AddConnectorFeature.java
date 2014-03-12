@@ -1,5 +1,9 @@
 package net.enilink.komma.graphiti.features.add;
 
+import net.enilink.komma.graphiti.Styles;
+import net.enilink.komma.graphiti.concepts.Connector;
+import net.enilink.komma.graphiti.service.ITypes;
+
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.context.IAddContext;
 import org.eclipse.graphiti.features.impl.AbstractAddShapeFeature;
@@ -12,13 +16,7 @@ import org.eclipse.graphiti.services.IPeService;
 
 import com.google.inject.Inject;
 
-import net.enilink.komma.graphiti.Styles;
-import net.enilink.komma.graphiti.concepts.Connector;
-import net.enilink.komma.graphiti.features.util.IQueries;
-import net.enilink.komma.graphiti.service.ITypes;
-
-public class AddConnectorFeature extends AbstractAddShapeFeature implements
-		IQueries {
+public class AddConnectorFeature extends AbstractAddShapeFeature {
 	@Inject
 	Styles styles;
 

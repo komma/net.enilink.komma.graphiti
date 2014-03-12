@@ -1,5 +1,9 @@
 package net.enilink.komma.graphiti;
 
+import net.enilink.komma.edit.domain.IEditingDomainProvider;
+import net.enilink.komma.edit.ui.views.IViewerMenuSupport;
+import net.enilink.komma.graphiti.service.IDiagramService;
+
 import org.eclipse.graphiti.dt.IDiagramTypeProvider;
 import org.eclipse.graphiti.features.context.ICustomContext;
 import org.eclipse.graphiti.features.context.IPictogramElementContext;
@@ -15,11 +19,7 @@ import org.eclipse.graphiti.tb.IContextButtonPadData;
 
 import com.google.inject.Inject;
 
-import net.enilink.komma.edit.domain.IEditingDomainProvider;
-import net.enilink.komma.edit.ui.views.IViewerMenuSupport;
-import net.enilink.komma.graphiti.service.IDiagramService;
-
-public class SystemToolBehaviorProvider extends DefaultToolBehaviorProvider {
+public class ToolBehaviorProvider extends DefaultToolBehaviorProvider {
 	@Inject
 	IViewerMenuSupport viewerMenuSupport;
 
@@ -27,7 +27,7 @@ public class SystemToolBehaviorProvider extends DefaultToolBehaviorProvider {
 	IDiagramService diagramService;
 
 	@Inject
-	public SystemToolBehaviorProvider(IDiagramTypeProvider diagramTypeProvider) {
+	public ToolBehaviorProvider(IDiagramTypeProvider diagramTypeProvider) {
 		super(diagramTypeProvider);
 	}
 

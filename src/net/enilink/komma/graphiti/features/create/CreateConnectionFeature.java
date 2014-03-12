@@ -4,6 +4,20 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import net.enilink.komma.common.adapter.IAdapterFactory;
+import net.enilink.komma.core.IEntity;
+import net.enilink.komma.core.IReference;
+import net.enilink.komma.core.IStatement;
+import net.enilink.komma.core.Statement;
+import net.enilink.komma.em.concepts.IClass;
+import net.enilink.komma.em.concepts.IProperty;
+import net.enilink.komma.em.concepts.IResource;
+import net.enilink.komma.graphiti.features.util.Queries;
+import net.enilink.komma.graphiti.graphical.IGraphitiProvider;
+import net.enilink.komma.graphiti.service.IDiagramService;
+import net.enilink.komma.graphiti.service.ITypes;
+import net.enilink.komma.model.IModel;
+
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.context.ICreateConnectionContext;
 import org.eclipse.graphiti.features.context.impl.AddConnectionContext;
@@ -20,22 +34,7 @@ import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 
 import com.google.inject.Inject;
 
-import net.enilink.komma.common.adapter.IAdapterFactory;
-import net.enilink.komma.concepts.IClass;
-import net.enilink.komma.concepts.IProperty;
-import net.enilink.komma.concepts.IResource;
-import net.enilink.komma.graphiti.features.util.IQueries;
-import net.enilink.komma.graphiti.graphical.IGraphitiProvider;
-import net.enilink.komma.graphiti.service.IDiagramService;
-import net.enilink.komma.graphiti.service.ITypes;
-import net.enilink.komma.model.IModel;
-import net.enilink.komma.core.IEntity;
-import net.enilink.komma.core.IReference;
-import net.enilink.komma.core.IStatement;
-import net.enilink.komma.core.Statement;
-
-public class CreateConnectionFeature extends AbstractCreateConnectionFeature
-		implements IQueries {
+public class CreateConnectionFeature extends AbstractCreateConnectionFeature {
 	@Inject
 	IURIFactory uriFactory;
 
@@ -211,8 +210,10 @@ public class CreateConnectionFeature extends AbstractCreateConnectionFeature
 
 				// plain
 				if (properties == null) {
-					properties = source.getEntityManager()
-							.createQuery(SELECT_APPLICABLE_CONNECTION_PROPERTIES)
+					properties = source
+							.getEntityManager()
+							.createQuery(
+									Queries.SELECT_APPLICABLE_CONNECTION_PROPERTIES())
 							.setParameter("subject", source)
 							.setParameter("object", target)
 							.evaluate(IProperty.class).toList();

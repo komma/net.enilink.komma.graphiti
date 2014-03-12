@@ -1,5 +1,7 @@
 package net.enilink.komma.graphiti.features;
 
+import net.enilink.komma.em.concepts.IResource;
+
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.IReason;
 import org.eclipse.graphiti.features.context.IUpdateContext;
@@ -16,8 +18,6 @@ import org.eclipse.graphiti.services.IPeService;
 import org.eclipse.jface.viewers.ILabelProvider;
 
 import com.google.inject.Inject;
-
-import net.enilink.komma.concepts.IResource;
 
 public class UpdateNodeFeature extends AbstractUpdateFeature {
 	@Inject

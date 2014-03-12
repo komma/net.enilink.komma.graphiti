@@ -1,5 +1,8 @@
 package net.enilink.komma.graphiti.features;
 
+import net.enilink.komma.em.concepts.IResource;
+import net.enilink.komma.graphiti.service.IDiagramService;
+
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.context.IContext;
 import org.eclipse.graphiti.features.context.IDirectEditingContext;
@@ -9,9 +12,6 @@ import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.jface.viewers.ILabelProvider;
 
 import com.google.inject.Inject;
-
-import net.enilink.komma.concepts.IResource;
-import net.enilink.komma.graphiti.service.IDiagramService;
 
 public class DirectEditingFeature extends AbstractDirectEditingFeature {
 	@Inject

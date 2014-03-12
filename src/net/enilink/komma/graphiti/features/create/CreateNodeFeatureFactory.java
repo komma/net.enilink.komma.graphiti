@@ -1,8 +1,8 @@
 package net.enilink.komma.graphiti.features.create;
 
-import com.google.inject.assistedinject.Assisted;
-
 import net.enilink.komma.core.IReference;
+
+import com.google.inject.assistedinject.Assisted;
 
 public interface CreateNodeFeatureFactory {
 	CreateNodeFeature create(IReference type, @Assisted("name") String name,

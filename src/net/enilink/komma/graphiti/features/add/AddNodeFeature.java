@@ -1,13 +1,27 @@
 package net.enilink.komma.graphiti.features.add;
 
+import net.enilink.komma.common.adapter.IAdapterFactory;
+import net.enilink.komma.core.IEntity;
+import net.enilink.komma.core.IReference;
+import net.enilink.komma.core.IStatement;
+import net.enilink.komma.core.Statement;
+import net.enilink.komma.em.concepts.IClass;
+import net.enilink.komma.em.concepts.IProperty;
+import net.enilink.komma.graphiti.GraphicsAlgorithmRendererFactory;
+import net.enilink.komma.graphiti.Styles;
+import net.enilink.komma.graphiti.features.create.IURIFactory;
+import net.enilink.komma.graphiti.features.util.Queries;
+import net.enilink.komma.graphiti.graphical.IGraphitiProvider;
+import net.enilink.komma.graphiti.service.IDiagramService;
+import net.enilink.komma.graphiti.service.ITypes;
+import net.enilink.komma.model.IModel;
+
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.context.IAddContext;
 import org.eclipse.graphiti.features.impl.AbstractAddShapeFeature;
 import org.eclipse.graphiti.mm.algorithms.AbstractText;
 import org.eclipse.graphiti.mm.algorithms.GraphicsAlgorithm;
 import org.eclipse.graphiti.mm.algorithms.Rectangle;
-import org.eclipse.graphiti.mm.algorithms.RoundedRectangle;
-import org.eclipse.graphiti.mm.algorithms.styles.Style;
 import org.eclipse.graphiti.mm.pictograms.ContainerShape;
 import org.eclipse.graphiti.mm.pictograms.Diagram;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
@@ -21,23 +35,7 @@ import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 
 import com.google.inject.Inject;
 
-import net.enilink.komma.common.adapter.IAdapterFactory;
-import net.enilink.komma.concepts.IClass;
-import net.enilink.komma.concepts.IProperty;
-import net.enilink.komma.graphiti.Styles;
-import net.enilink.komma.graphiti.SystemGraphicsAlgorithmRendererFactory;
-import net.enilink.komma.graphiti.features.create.IURIFactory;
-import net.enilink.komma.graphiti.features.util.IQueries;
-import net.enilink.komma.graphiti.graphical.IGraphitiProvider;
-import net.enilink.komma.graphiti.service.IDiagramService;
-import net.enilink.komma.graphiti.service.ITypes;
-import net.enilink.komma.model.IModel;
-import net.enilink.komma.core.IEntity;
-import net.enilink.komma.core.IReference;
-import net.enilink.komma.core.IStatement;
-import net.enilink.komma.core.Statement;
-
-public class AddNodeFeature extends AbstractAddShapeFeature implements IQueries {
+public class AddNodeFeature extends AbstractAddShapeFeature {
 	@Inject
 	IModel model;
 
@@ -96,14 +94,14 @@ public class AddNodeFeature extends AbstractAddShapeFeature implements IQueries 
 			properties = model
 					.getManager()
 					.createQuery(
-							SELECT_APPLICABLE_CHILD_PROPERTIES_IF_OBJECT_IS_TYPE)
+							Queries.SELECT_APPLICABLE_CHILD_PROPERTIES_IF_OBJECT_IS_TYPE)
 					.setParameter("subject", target)
 					.setParameter("objectType", nodeOrClass)
 					.evaluate(IProperty.class).toList()
 					.toArray(new IProperty[0]);
 		} else {
 			properties = model.getManager()
-					.createQuery(SELECT_APPLICABLE_CHILD_PROPERTIES)
+					.createQuery(Queries.SELECT_APPLICABLE_CHILD_PROPERTIES)
 					.setParameter("subject", target)
 					.setParameter("object", nodeOrClass)
 					.evaluate(IProperty.class).toList()
@@ -217,9 +215,8 @@ public class AddNodeFeature extends AbstractAddShapeFeature implements IQueries 
 			}
 
 			// create and set graphics algorithm
-			GraphicsAlgorithm ga = gaService
-					.createPlatformGraphicsAlgorithm(nodeVis,
-							SystemGraphicsAlgorithmRendererFactory.NODE_FIGURE);
+			GraphicsAlgorithm ga = gaService.createPlatformGraphicsAlgorithm(
+					nodeVis, GraphicsAlgorithmRendererFactory.NODE_FIGURE);
 
 		}
 
@@ -229,7 +226,7 @@ public class AddNodeFeature extends AbstractAddShapeFeature implements IQueries 
 			Shape shape = peService.createShape(container, false);
 
 			// create and set text graphics algorithm
-			AbstractText text = gaService.createDefaultMultiText(
+			AbstractText text = gaService.createDefaultMultiText(getDiagram(),
 					shape, labelProvider.getText(node));
 
 			text.setStyle(styles.getStyleForNodeText(null));

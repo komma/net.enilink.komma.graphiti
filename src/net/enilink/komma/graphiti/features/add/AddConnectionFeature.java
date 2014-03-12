@@ -1,5 +1,10 @@
 package net.enilink.komma.graphiti.features.add;
 
+import net.enilink.komma.core.IEntity;
+import net.enilink.komma.core.IStatement;
+import net.enilink.komma.model.IModel;
+import net.enilink.komma.model.ModelUtil;
+
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.context.IAddConnectionContext;
 import org.eclipse.graphiti.features.context.IAddContext;
@@ -14,11 +19,6 @@ import org.eclipse.graphiti.services.IGaService;
 import org.eclipse.graphiti.services.IPeCreateService;
 
 import com.google.inject.Inject;
-
-import net.enilink.komma.model.IModel;
-import net.enilink.komma.model.ModelUtil;
-import net.enilink.komma.core.IEntity;
-import net.enilink.komma.core.IStatement;
 
 public class AddConnectionFeature extends AbstractAddFeature {
 	@Inject
@@ -43,7 +43,7 @@ public class AddConnectionFeature extends AbstractAddFeature {
 		}
 
 		if (context instanceof IAddConnectionContext
-				&& context.getNewObject() instanceof net.enilink.komma.concepts.Connection) {
+				&& context.getNewObject() instanceof net.enilink.vocab.komma.Connection) {
 			return true;
 		}
 
@@ -58,7 +58,7 @@ public class AddConnectionFeature extends AbstractAddFeature {
 		if (addedConnection instanceof IStatement) {
 			label = ModelUtil.getLabel(model
 					.resolve(((IStatement) addedConnection).getPredicate()));
-		} else if (addedConnection instanceof net.enilink.komma.concepts.Connection) {
+		} else if (addedConnection instanceof net.enilink.vocab.komma.Connection) {
 			label = ModelUtil.getLabel(model
 					.resolve(((IEntity) addedConnection).getReference()));
 		}
@@ -78,7 +78,7 @@ public class AddConnectionFeature extends AbstractAddFeature {
 		// add dynamic text decorator for the reference name
 		ConnectionDecorator textDecorator = peCreateService
 				.createConnectionDecorator(connection, true, 0.5, true);
-		Text text = gaService.createDefaultText(textDecorator);
+		Text text = gaService.createDefaultText(getDiagram(), textDecorator);
 		// text.setStyle(StyleUtil.getStyleForEClassText((getDiagram())));
 		gaService.setLocation(text, 10, 0);
 		// set reference name in the text decorator

@@ -7,6 +7,13 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 
+import net.enilink.komma.common.adapter.IAdapterFactory;
+import net.enilink.komma.em.concepts.IClass;
+import net.enilink.komma.em.concepts.IResource;
+import net.enilink.komma.graphiti.graphical.IGraphitiProvider;
+import net.enilink.komma.graphiti.graphical.NodeFigure;
+import net.enilink.komma.graphiti.service.IDiagramService;
+
 import org.eclipse.core.net.proxy.IProxyData;
 import org.eclipse.core.net.proxy.IProxyService;
 import org.eclipse.core.runtime.FileLocator;
@@ -19,14 +26,7 @@ import org.eclipse.graphiti.platform.ga.IRendererContext;
 
 import com.google.inject.Inject;
 
-import net.enilink.komma.common.adapter.IAdapterFactory;
-import net.enilink.komma.concepts.IClass;
-import net.enilink.komma.concepts.IResource;
-import net.enilink.komma.graphiti.graphical.IGraphitiProvider;
-import net.enilink.komma.graphiti.graphical.NodeFigure;
-import net.enilink.komma.graphiti.service.IDiagramService;
-
-public class SystemGraphicsAlgorithmRendererFactory implements
+public class GraphicsAlgorithmRendererFactory implements
 		IGraphicsAlgorithmRendererFactory {
 	public final static String NODE_FIGURE = "net.enilink.komma.graphiti.Node";
 
